@@ -125,21 +125,23 @@ Verification strategy (four oracles, fuzzing, sanitizers, CI) is in `docs/design
 
 ## Results summary
 
-Quoted from [`docs/results.md`](docs/results.md): single-threaded baseline, Apple M3 Pro, macOS,
-`-O3`, page cache warm, 1 GiB synthetic datasets, a loaded machine (expect +/-10-20 %). Targets
-assume x86-64 Linux with 8+ cores. Multi-worker scaling, Linux numbers and real-capture results
-are not measured yet, and the results predate the `-O2` change, the ACKed-hole release and the
-memory release frontier.
+From [`docs/results.md`](docs/results.md) section A: final code, Ubuntu 24.04 container on an Apple
+M3 Pro (arm64, 11 vCPUs), GCC 13 `-O2`, page cache warm, 1 GiB synthetic datasets, median of 5.
+The PRD targets assume x86-64 Linux; no real-world capture has been benchmarked.
 
-| Measure | Result |
-|---|---|
-| Decode only, D3 mix (BM_Decode/d3) | 55.4 M pkt/s (PRD target 15 M) |
-| In-order reassembly, NullSink | 301 GiB/s (CV 12.7 %; PRD target 8 GiB/s) |
-| Reassembly, 10 % reorder | 38.9 GiB/s (PRD target 1.5 GiB/s) |
-| End-to-end D3, `--workers 0` | 4.823 Mpkt/s, 2345 MiB/s (median of 9) |
-| End-to-end D1, `--workers 0` | 4.449 Mpkt/s, 1412 MiB/s |
-| Peak RSS, D2 (1 GiB file) | 1071 MiB; PRD target 128 MiB **not met** at that baseline |
-| Worker scaling (PERF-6, PERF-7) | not measured |
+| Measure | Result | PRD target |
+|---|---|---|
+| Decode only, D3 mix | 38.6 M pkt/s | ≥ 15 M |
+| Reassembly, 10 % reorder | 31.4 GiB/s | ≥ 1.5 GiB/s |
+| End-to-end D3, inline | 3.73 Mpkt/s, 1.77 GiB/s | ≥ 2.5 Mpkt/s, 1.5 GiB/s |
+| End-to-end D3, 4 workers | 7.69 Mpkt/s (2.06×) | ≥ 2.0× |
+| End-to-end D1 (284k flows), inline / 4 workers | 3.84 / 8.80 Mpkt/s | ≥ 1.5 Mpkt/s |
+| Peak RSS, 1 GiB D2 capture | 33–78 MiB | ≤ 128 MiB |
+| Memory per live flow | ≈ 790 B (upper bound) | ≤ 512 B, **not met** |
+| Fuzzing, 30 min per target | 1.33 B / 535 M / 8.0 M executions, 0 findings | 0 findings |
+
+Scaling stops at about 2× because the reader thread is the serial fraction (≈ 0.47, Amdahl ceiling
+≈ 2.1×); one elephant flow cannot be split across shards.
 
 ## Documentation
 

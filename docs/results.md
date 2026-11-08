@@ -1,4 +1,115 @@
-# NetProbe benchmark results (M8 baseline, single-threaded)
+# NetProbe results
+
+Every number below comes from a command recorded in this file or in `bench/run_linux_container.sh`.
+Disk I/O is excluded everywhere (page cache warm). Section A is the current, final code on Linux;
+section B is the earlier macOS single-threaded baseline (M8), kept for history.
+
+## A. Final code on Linux (container), single- and multi-threaded
+
+### A.1 Setup
+
+| Item | Value |
+|---|---|
+| Host | Apple M3 Pro, 11 cores, 18 GiB, running Docker Desktop |
+| Guest | Ubuntu 24.04 container, kernel `Linux 7.0.14-linuxkit aarch64`, 11 vCPUs, 7.7 GiB (`out/bench-linux/env.txt`) |
+| Compiler | `g++-13 (Ubuntu 13.3.0-6ubuntu2~24.04.1)`, Release `-O2 -DNDEBUG`, no `-march=native`, no LTO |
+| Code | integration branch at commit `9b23f83` (pipeline, release frontier, D7 revision, review fixes) |
+| Command | `docker run --rm -v "$PWD":/src -w /src -e RUNS=5 netprobe-dev:24.04 bench/run_linux_container.sh out/bench-linux` |
+| Datasets | D1/D2/D3 regenerated in the container by `synth_pcap --profile dN --size 1G` (seed 1; SHA-256 identical to section B) |
+| Method | per worker count: one warm-up run, then 5 measured runs; median (min–max). Micro-benchmarks: 5 repetitions, median; CV ≤ 5 % except `BM_MutexQueue/1` (9.2 %) |
+| Caveats | arm64 under a VM, not the PRD's x86-64 reference machine; datasets 1 GiB, not 2 GiB; no real-world capture (R1); no core pinning. Nothing else ran during the measurement. |
+
+### A.2 End-to-end throughput by worker count
+
+`netprobe analyze --quiet --workers N --json <tmp>` (`out/bench-linux/e2e_*.txt`). Mpkt/s and MiB/s
+are captured records and bytes per second of wall time.
+
+| Dataset | workers | elapsed ms | Mpkt/s | MiB/s | peak RSS MiB |
+|---|---|---|---|---|---|
+| D3 mixed | 0 (inline) | 547 (464–864) | 3.73 (2.36–4.40) | 1815 | 253.7 |
+| D3 | 1 | 400 (395–401) | 5.11 | 2483 | 196.6 |
+| D3 | 2 | 269 (256–285) | 7.60 | 3696 | 196.9 |
+| D3 | 4 | 265 (249–269) | 7.69 | 3741 | 200.3 |
+| D3 | 8 | 258 (250–264) | 7.90 | 3842 | 208.2 |
+| D1 many flows | 0 | 803 (785–878) | 3.84 | 1217 | 209.7 |
+| D1 | 1 | 766 (753–911) | 4.02 | 1275 | 163.2 |
+| D1 | 2 | 399 (394–414) | 7.71 | 2447 | 164.1 |
+| D1 | 4 | 350 (338–361) | 8.80 | 2790 | 165.6 |
+| D1 | 8 | 351 (338–450) | 8.77 | 2783 | 170.1 |
+| D2 16 elephants | 0 | 180 (179–191) | 5.73 | 5608 | 78.3 |
+| D2 | 1 | 151 (150–154) | 6.83 | 6686 | 33.3 |
+| D2 | 2 | 158 (154–158) | 6.54 | 6402 | 34.0 |
+| D2 | 4 | 163 (161–163) | 6.32 | 6192 | 39.1 |
+| D2 | 8 | 169 (165–172) | 6.09 | 5963 | 46.7 |
+
+**Scaling and its ceiling.** Throughput saturates at about 7.7–8.8 Mpkt/s from 2–4 workers on. The
+reader thread (record iteration, decode, `ReaderStats`, flow hash, batching) is the serial part: at
+saturation it costs about 1 / 7.9 M ≈ 127 ns per packet, against about 268 ns per packet for the
+whole inline path on D3. Amdahl with serial fraction ≈ 0.47 predicts a ceiling of ≈ 2.1×, which is
+what D3 shows (2.06× at 4 workers). D2's 16 elephant flows cannot be split across shards, so extra
+workers only add coordination cost. `--workers 1` is faster than inline because decoding overlaps
+with analysis. The next step would be moving decode or `ReaderStats` off the reader thread; no
+change was made without measurements to justify it.
+
+### A.3 Micro-benchmarks (`out/bench-linux/micro.json`)
+
+| Benchmark | Median |
+|---|---|
+| `BM_Decode/d3` | 38.6 M pkt/s (18.2 GiB/s) |
+| `BM_Decode/tcp_v4`, `tcp_v6`, `udp_v4`, `vlan` | 39.7, 37.0, 41.9, 38.9 M pkt/s |
+| `BM_FlowLookup` at 1 Ki / 64 Ki / 1 Mi live flows | 23.4 / 15.9 / 4.02 M lookups/s |
+| `BM_Reassembly_InOrder` (1460 B, NullSink) | 331 GiB/s: bookkeeping only, the in-order path copies nothing |
+| `BM_Reassembly_Reorder` 1 % / 10 % / 30 % | 160 / 31.4 / 16.1 GiB/s |
+| `BM_Reassembly_Retransmit` 1 % / 10 % | 324 / 264 GiB/s |
+| `BM_Analyzer` (decode + analyzer, 32 MiB D3 slice, 1 thread) | 7.70 M pkt/s |
+| `BM_Spsc` 1 / 256 items per op | 104 / 105 M items/s |
+| `BM_MutexQueue` 1 / 256 items per op (baseline) | 5.9 / 6.2 M items/s |
+
+### A.4 Memory
+
+- **Release frontier (PERF-M1):** D2 1 GiB peak RSS is 78 MiB inline and 33–47 MiB with workers,
+  versus about 1.07 GiB before the frontier existed (section B). Measured at 1 GiB, not 2 GiB.
+- **Per-flow memory (PERF-M2):** D1 at 64 MiB vs 1 GiB with `--idle-timeout 86400` gives peak live
+  flows 20,717 vs 189,491 and peak RSS 82.3 vs 209.7 MiB, so ≈ 790 B per live flow. This is an upper
+  bound (it also includes per-address talker entries, which grow with flows here). The 512 B target
+  is **not met**: two `StreamReassembler`s are 2 × 232 B on their own. Upgrade path: allocate
+  reassembly state only for TCP flows and only after the first payload byte, and keep rarely
+  non-zero counters out of line.
+- **Reassembly buffering (D7 revision):** on a 200 MiB D2-profile capture, forced flushes went from
+  29 to 0 and peak buffered bytes from 39.7 MB to 8.5 MB, with identical gaps (same file,
+  before/after binaries; see commit `609e42d`).
+
+### A.5 PRD 13 targets on this setup
+
+| ID | Target | Measured (Linux container, A.2–A.4) | Status |
+|---|---|---|---|
+| PERF-1 | decode D3 ≥ 15 M pkt/s | 38.6 M pkt/s | met |
+| PERF-2 | in-order reassembly ≥ 8 GiB/s | 331 GiB/s (NullSink) | met, bookkeeping rate |
+| PERF-3 | 10 % reorder ≥ 1.5 GiB/s | 31.4 GiB/s | met |
+| PERF-4 | e2e D3 w0 ≥ 2.5 Mpkt/s and ≥ 1.5 GiB/s | 3.73 Mpkt/s, 1.77 GiB/s | met |
+| PERF-5 | e2e D1 w0 ≥ 1.5 Mpkt/s | 3.84 Mpkt/s (284k flows, not 1 Mi) | met |
+| PERF-6 | D3 w4 / w0 ≥ 2.0× | 2.06× (7.69 / 3.73) | met, at the Amdahl ceiling |
+| PERF-7 | w1 ≤ 20 % slower than w0 | 27 % faster on D3 | met |
+| PERF-M1 | D2 peak RSS ≤ 128 MiB | 33–78 MiB (1 GiB file) | met at 1 GiB; 2 GiB not run |
+| PERF-M2 | ≤ 512 B per idle flow | ≈ 790 B upper bound | **not met** (see A.4) |
+| PERF-M3 | budget ≤ limit + one segment | enforced and tested | met (tests) |
+
+### A.6 Fuzzing (30 minutes per target, Linux, Clang 18, ASan + UBSan, instrumented library)
+
+| Target | Executions | exec/s | Coverage (edges) | Corpus | Findings |
+|---|---|---|---|---|---|
+| `fuzz_decode` | 1,333,493,678 | 740,418 | 131 | 191 | 0 |
+| `fuzz_pcap` | 535,143,250 | 297,136 | 288 | 557 | 0 |
+| `fuzz_reassembly` | 8,019,625 | 4,452 | 249 | 515 | 0 |
+
+Earlier fuzz runs (including those reported by workers during development) were built before
+`8d4b4bc`, when only the harnesses had coverage instrumentation; their execution counts carry
+little coverage weight and are not counted here.
+
+---
+
+## B. M8 baseline (macOS, single-threaded, historical)
+
 
 Every number below was produced by a command listed in this file. Baseline is git `f171118` plus the
 bench tooling in this change. **Disk I/O is excluded**: all end-to-end runs use a page-cache-warm

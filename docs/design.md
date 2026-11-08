@@ -415,17 +415,17 @@ build and test run. CI does not gate on performance.
 - Timestamp-order assumptions: expiry and the determinism guarantee assume non-decreasing
   capture time.
 - A single flow cannot be parallelized, and the reader thread is serial.
-- Memory release: bounded RSS needs working `MADV_DONTNEED`; it did not bound RSS on macOS in the
-  author's check. Per-flow memory (PERF-M2) is unmeasured, and the 2 GiB PERF-M1 gate has not been
-  measured at all.
-- Performance data in `docs/results.md` is single-threaded, macOS/arm64, `-O3`, on a loaded
-  machine, 1 GiB datasets, no real-world capture (R1). Linux x86-64 numbers do not exist yet.
+- Memory release: bounded RSS needs working `MADV_DONTNEED`; it did not bound RSS on macOS. On
+  Linux, D2 (1 GiB) peaks at 33–78 MiB. Per-flow memory is ≈ 790 B, above the 512 B target.
+- Performance data is from an arm64 Linux container and macOS on the same laptop, 1 GiB datasets,
+  no real-world capture (R1); x86-64 numbers do not exist.
 - Memory-limit behavior is deterministic per worker count but not across worker counts.
 
 ## 12. Open questions
 
-- Should the PRD's `-O2` be re-measured? `results.md` was produced at `-O3`; the delta is unknown.
-- Does the release frontier meet PERF-M1 on the reference Linux machine class at 2 GiB? Only the
-  commit message of `1e8776d` reports a smaller 1 GiB Linux run.
-- Should `ReaderStats` run on a separate thread? At the measured profile the reader is the largest
-  single cost, but multi-worker scaling has not been measured, so there is no evidence either way.
+- Reader-thread ceiling: measured scaling (docs/results.md A.2) stops at about 2× because the
+  reader is ≈ 47 % of per-packet cost. Moving decode or `ReaderStats` into the workers would raise
+  the ceiling; it needs a profile on the reference machine class before changing the design.
+- Per-flow memory is ≈ 790 B (upper bound), above the 512 B target; see results A.4 for the
+  upgrade path.
+- Not run: 2 GiB datasets, an x86-64 reference machine, and a real-world capture (R1).

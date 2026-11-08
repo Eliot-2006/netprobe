@@ -131,8 +131,9 @@ TEST(ReassemblerProperty, CoverageBytesGapsAndCounters) {
         ASSERT_EQ(actual.out_of_window_segments, expected.out_of_window_segments);
         ASSERT_EQ(actual.data_after_fin, expected.data_after_fin);
         ASSERT_EQ(actual.complete(), has_fin && model.delivered == length && model.gaps.empty());
-        if (!impaired && !conflicts)
+        if (!impaired && !conflicts) {
             ASSERT_EQ(sink.bytes, truth);
+        }
     }
 }
 } // namespace

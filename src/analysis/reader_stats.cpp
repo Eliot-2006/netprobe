@@ -76,7 +76,7 @@ void ReaderStats::add(const PacketRecord& rec, const DecodedPacket& pkt) noexcep
     }
     if (pkt.ip_version == 4) {
         ++c_.ipv4;
-        c_.ipv4_bad_checksum += pkt.ipv4_checksum_ok ? 0 : 1;
+        c_.ipv4_bad_checksum += pkt.ipv4_checksum_ok ? 0u : 1u;
     } else if (pkt.ip_version == 6) {
         ++c_.ipv6;
     } else if (st.ok()) {
@@ -87,7 +87,7 @@ void ReaderStats::add(const PacketRecord& rec, const DecodedPacket& pkt) noexcep
         }
     }
     if (pkt.ip_version != 0) {
-        c_.ip_zero_length += pkt.ip_zero_length ? 1 : 0;
+        c_.ip_zero_length += pkt.ip_zero_length ? 1u : 0u;
         if (pkt.is_fragment) {
             ++c_.ip_fragments;
         } else if (st.ok() || st.layer == Layer::tcp || st.layer == Layer::udp) {
@@ -96,14 +96,14 @@ void ReaderStats::add(const PacketRecord& rec, const DecodedPacket& pkt) noexcep
             case ip_proto::tcp:
                 if (st.ok()) {
                     ++c_.tcp;
-                    c_.tcp_options_malformed += pkt.tcp_options_malformed ? 1 : 0;
-                    c_.tcp_flags_invalid += tcp_flags_invalid(pkt.tcp_flags) ? 1 : 0;
+                    c_.tcp_options_malformed += pkt.tcp_options_malformed ? 1u : 0u;
+                    c_.tcp_flags_invalid += tcp_flags_invalid(pkt.tcp_flags) ? 1u : 0u;
                 }
                 break;
             case ip_proto::udp:
                 if (st.ok()) {
                     ++c_.udp;
-                    c_.udp_trailing_bytes += pkt.udp_trailing_bytes > 0 ? 1 : 0;
+                    c_.udp_trailing_bytes += pkt.udp_trailing_bytes > 0 ? 1u : 0u;
                 }
                 break;
             case ip_proto::icmp:

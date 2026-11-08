@@ -612,7 +612,7 @@ Processing:
 Sizes accept K, M, G suffixes (powers of 1024).
 ```
 
-- Validation: N ≤ 256 workers; sizes ≥ 64K; `--top-flows` 1..1,000,000; `--idle-timeout` 1..86400. Out-of-range values → exit 1 with the allowed range.
+- Validation: N ≤ 256 workers; sizes ≥ 64K; `--top-flows` 1..100,000; `--idle-timeout` 1..86400. Out-of-range values → exit 1 with the allowed range.
 - Unknown options and duplicate positional arguments → exit 1.
 - The parser is a small hand-written loop with table-driven tests.
 

@@ -1,0 +1,362 @@
+{
+  "schema_version": 1,
+  "tool": {
+    "name": "netprobe",
+    "version": "0.1.0"
+  },
+  "options": {
+    "workers": 0,
+    "idle_timeout_s": 300,
+    "max_flows": 1000000,
+    "max_stream_buffer": 4194304,
+    "max_reassembly_memory": 536870912,
+    "top_flows": 1000
+  },
+  "capture": {
+    "path": "tests/fixtures/malformed_mix.pcap",
+    "file_size": 1700,
+    "format": "pcap",
+    "byte_order": "little",
+    "ts_precision": "usec",
+    "version": "2.4",
+    "snaplen": 262144,
+    "link_type": 1,
+    "link_type_name": "EN10MB",
+    "status": "complete",
+    "truncated_tail_bytes": 0,
+    "records": 21,
+    "captured_bytes": 1340,
+    "original_bytes": 1392,
+    "records_truncated_by_snaplen": 2,
+    "timestamp_regressions": 0,
+    "first_ts_ns": 1700000000000000000,
+    "last_ts_ns": 1700000000020000000,
+    "duration_ns": 20000000
+  },
+  "decode": {
+    "layers": {
+      "ethernet": 19,
+      "vlan_tagged": 1,
+      "ipv4": 9,
+      "ipv6": 3,
+      "tcp": 4,
+      "udp": 0,
+      "icmp": 0,
+      "icmpv6": 0,
+      "arp": 0,
+      "ip_fragments": 0,
+      "other_ethertype": 0,
+      "other_ip_proto": 0
+    },
+    "ethertypes": {
+      "0x0800": 13,
+      "0x86dd": 5
+    },
+    "ip_protocols": {
+      "6": 7,
+      "17": 2
+    },
+    "vlans": {
+      "1": 1
+    },
+    "errors": {
+      "truncated": {
+        "ethernet.short_header": 1,
+        "ipv4.short_header": 1,
+        "ipv6.short_header": 1,
+        "tcp.short_header": 1
+      },
+      "malformed": {
+        "ipv4.bad_ihl": 1,
+        "ipv4.bad_total_length": 1,
+        "ipv4.bad_version": 1,
+        "ipv6.bad_version": 1,
+        "tcp.tcp_data_offset": 2,
+        "udp.udp_length": 2
+      },
+      "unsupported": {
+        "ethernet.llc": 1,
+        "ipv6_ext.ipv6_ext": 1,
+        "ipv6_ext.ipv6_ext_chain": 1,
+        "ipv6_ext.ipv6_jumbo": 1,
+        "vlan.vlan_depth": 1
+      }
+    },
+    "anomalies": {
+      "ipv4_bad_checksum": 1,
+      "ip_zero_length": 1,
+      "udp_trailing_bytes": 0,
+      "tcp_options_malformed": 1,
+      "tcp_flags_invalid": 1,
+      "incl_gt_orig": 0,
+      "ts_fraction_overflow": 0,
+      "version_anomaly": 0
+    }
+  },
+  "timeline": {
+    "origin_ns": 1700000000000000000,
+    "bucket_width_ns": 1000000,
+    "clamped": 0,
+    "buckets": [
+      {
+        "packets": 1,
+        "bytes": 10
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 66
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 70
+      },
+      {
+        "packets": 1,
+        "bytes": 134
+      },
+      {
+        "packets": 1,
+        "bytes": 62
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 150
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      }
+    ]
+  },
+  "flows": {
+    "tcp": {
+      "total": 2,
+      "handshake_full": 0,
+      "handshake_partial": 1,
+      "handshake_none": 1,
+      "close_fin": 0,
+      "close_rst": 0,
+      "close_idle_timeout": 0,
+      "close_end_of_capture": 2,
+      "close_reused": 0,
+      "close_evicted": 0,
+      "complete": 0,
+      "with_gaps": 0
+    },
+    "udp": {
+      "total": 0,
+      "close_idle_timeout": 0,
+      "close_end_of_capture": 0,
+      "close_evicted": 0
+    },
+    "top_by_bytes": [
+      {
+        "id": 8,
+        "proto": "tcp",
+        "ip_version": 4,
+        "client": {
+          "address": "1.1.1.1",
+          "port": 1
+        },
+        "server": {
+          "address": "2.2.2.2",
+          "port": 2
+        },
+        "orientation": "handshake",
+        "handshake": "partial",
+        "close_reason": "end_of_capture",
+        "integrity": "open",
+        "first_ts_ns": 1700000000008000000,
+        "last_ts_ns": 1700000000019000000,
+        "c2s": {
+          "packets": 3,
+          "bytes": 180,
+          "payload_bytes": 6,
+          "delivered_bytes": 6,
+          "retransmitted_bytes": 0,
+          "out_of_order_segments": 0,
+          "overlap_bytes": 0,
+          "conflicting_overlap_bytes": 0,
+          "gap_count": 0,
+          "gap_bytes": 0,
+          "gaps": [],
+          "gaps_truncated": false,
+          "fin": false,
+          "data_after_rst": 0
+        },
+        "s2c": {
+          "packets": 0,
+          "bytes": 0,
+          "payload_bytes": 0,
+          "delivered_bytes": 0,
+          "retransmitted_bytes": 0,
+          "out_of_order_segments": 0,
+          "overlap_bytes": 0,
+          "conflicting_overlap_bytes": 0,
+          "gap_count": 0,
+          "gap_bytes": 0,
+          "gaps": [],
+          "gaps_truncated": false,
+          "fin": false,
+          "data_after_rst": 0
+        }
+      },
+      {
+        "id": 20,
+        "proto": "tcp",
+        "ip_version": 4,
+        "client": {
+          "address": "1.1.1.1",
+          "port": 20
+        },
+        "server": {
+          "address": "2.2.2.2",
+          "port": 80
+        },
+        "orientation": "first_packet",
+        "handshake": "none",
+        "close_reason": "end_of_capture",
+        "integrity": "open",
+        "first_ts_ns": 1700000000020000000,
+        "last_ts_ns": 1700000000020000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 60,
+          "payload_bytes": 0,
+          "delivered_bytes": 0,
+          "retransmitted_bytes": 0,
+          "out_of_order_segments": 0,
+          "overlap_bytes": 0,
+          "conflicting_overlap_bytes": 0,
+          "gap_count": 0,
+          "gap_bytes": 0,
+          "gaps": [],
+          "gaps_truncated": false,
+          "fin": false,
+          "data_after_rst": 0
+        },
+        "s2c": {
+          "packets": 0,
+          "bytes": 0,
+          "payload_bytes": 0,
+          "delivered_bytes": 0,
+          "retransmitted_bytes": 0,
+          "out_of_order_segments": 0,
+          "overlap_bytes": 0,
+          "conflicting_overlap_bytes": 0,
+          "gap_count": 0,
+          "gap_bytes": 0,
+          "gaps": [],
+          "gaps_truncated": false,
+          "fin": false,
+          "data_after_rst": 0
+        }
+      }
+    ],
+    "top_incomplete": []
+  },
+  "reassembly": {
+    "delivered_bytes": 6,
+    "retransmitted_segments": 0,
+    "retransmitted_bytes": 0,
+    "out_of_order_segments": 0,
+    "overlap_bytes": 0,
+    "conflicting_overlap_bytes": 0,
+    "gap_count": 0,
+    "gap_bytes": 0,
+    "acked_gap_bytes": 0,
+    "snaplen_missing_bytes": 0,
+    "out_of_window_segments": 0,
+    "data_after_fin": 0,
+    "data_after_rst": 0,
+    "forced_flushes": 0,
+    "evicted_flows": 0,
+    "limits_hit": false
+  },
+  "talkers": [
+    {
+      "address": "1.1.1.1",
+      "bytes_sent": 240,
+      "bytes_received": 0,
+      "flows": 2
+    },
+    {
+      "address": "2.2.2.2",
+      "bytes_sent": 0,
+      "bytes_received": 240,
+      "flows": 2
+    }
+  ],
+  "services": [
+    {
+      "proto": "tcp",
+      "port": 2,
+      "label": "",
+      "flows": 1,
+      "bytes": 180
+    },
+    {
+      "proto": "tcp",
+      "port": 20,
+      "label": "ftp-data",
+      "flows": 1,
+      "bytes": 60
+    }
+  ]
+}

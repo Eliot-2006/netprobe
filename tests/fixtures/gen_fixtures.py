@@ -432,6 +432,13 @@ def udp_mixed(rng):
         "flows": {"tcp": 0, "udp": 6}}
 
 
+def ipv4_checksum(header: bytes) -> int:
+    total = sum(struct.unpack("!10H", header))
+    while total >> 16:
+        total = (total & 0xFFFF) + (total >> 16)
+    return ~total & 0xFFFF
+
+
 def raw_eth(ethertype, payload):
     return struct.pack("!6s6sH", bytes.fromhex("020000000002"), bytes.fromhex("020000000001"),
                        ethertype) + payload
@@ -497,6 +504,8 @@ def malformed_mix(rng):
     cases.append((raw_eth(0x0800, bytes(badsum)), "ok"))  # anomaly: ipv4_bad_checksum
     zero_len = bytearray(ip_ok)
     zero_len[2:4] = b"\x00\x00"
+    zero_len[10:12] = b"\x00\x00"
+    zero_len[10:12] = struct.pack("!H", ipv4_checksum(bytes(zero_len[:20])))
     cases.append((raw_eth(0x0800, bytes(zero_len)), "ok"))  # anomaly: ipv4_zero_total_length
     cases.append((frame_bytes(Ether(src=MAC_C, dst=MAC_S) / IP(src="1.1.1.1", dst="2.2.2.2") /
                               TCP(flags="SF")), "ok"))  # anomaly: tcp_flags_invalid

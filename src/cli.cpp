@@ -228,7 +228,8 @@ CliResult parse_cli(std::span<const std::string_view> args) {
             }
             a.max_reassembly_memory = *n;
         } else if (name == "--top-flows") {
-            auto n = take_number({1, 1'000'000}, false);
+            // Each kept summary can be ~1 KiB and two lists are kept: cap worst case ~200 MiB.
+            auto n = take_number({1, 100'000}, false);
             if (!n) {
                 return r;
             }

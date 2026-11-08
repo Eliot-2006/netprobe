@@ -65,7 +65,7 @@ bool hbh_has_jumbo(Bytes h) noexcept {
         if (i + 1 >= h.size()) {
             return false;
         }
-        i += 2 + load_u8(h.data() + i + 1);
+        i += std::size_t{2} + load_u8(h.data() + i + 1);
     }
     return false;
 }

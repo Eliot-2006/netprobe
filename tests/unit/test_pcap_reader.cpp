@@ -18,19 +18,52 @@ std::atomic<bool> g_count_allocs{false};
 std::atomic<std::size_t> g_allocs{0};
 } // namespace
 
-void* operator new(std::size_t n) {
+// GCC flags free() inside replacement operator delete as mismatched; for a replacement whose
+// operator new uses malloc, free is the correct pairing.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif
+// Every replaceable non-aligned form is replaced so each allocation pairs with the matching
+// deallocation (replacing only some forms mixes malloc/free with the runtime's new/delete).
+namespace {
+void* counted_alloc(std::size_t n) noexcept {
     if (g_count_allocs.load(std::memory_order_relaxed)) {
         g_allocs.fetch_add(1, std::memory_order_relaxed);
     }
-    if (void* p = std::malloc(n == 0 ? 1 : n)) {
+    return std::malloc(n == 0 ? 1 : n);
+}
+} // namespace
+void* operator new(std::size_t n) {
+    if (void* p = counted_alloc(n)) {
         return p;
     }
     throw std::bad_alloc();
 }
+void* operator new[](std::size_t n) {
+    return operator new(n);
+}
+void* operator new(std::size_t n, const std::nothrow_t&) noexcept {
+    return counted_alloc(n);
+}
+void* operator new[](std::size_t n, const std::nothrow_t&) noexcept {
+    return counted_alloc(n);
+}
 void operator delete(void* p) noexcept {
     std::free(p);
 }
+void operator delete[](void* p) noexcept {
+    std::free(p);
+}
 void operator delete(void* p, std::size_t) noexcept {
+    std::free(p);
+}
+void operator delete[](void* p, std::size_t) noexcept {
+    std::free(p);
+}
+void operator delete(void* p, const std::nothrow_t&) noexcept {
+    std::free(p);
+}
+void operator delete[](void* p, const std::nothrow_t&) noexcept {
     std::free(p);
 }
 

@@ -32,6 +32,18 @@
   with GCC 13 and Clang 18, byte-identical output for -j 0/1/2/4/8, Linux peak RSS 107.7 MiB on the
   1 GiB D2 capture with the release frontier.
 
+- **Independent review** (Antigravity, Gemini 3.8 Flash; 9 findings): 4 fixed with regressions
+  (stale FIN, uncounted bytes past FIN, orientation after stray packets, ACK unwrap past 2^30),
+  1 rejected with evidence (timeline overflow), 4 documented as deliberate deviations (PRD 2.3).
+- **Fuzz instrumentation bug** found and fixed: only harnesses had coverage instrumentation, so
+  earlier fuzz execution counts (including workers' reports) had almost no coverage feedback from
+  the library. Fixed with `-fsanitize=fuzzer-no-link` for all libraries; 30-min campaign rerun.
+- **tshark differential** on Linux (tshark 4.2.2) and macOS (4.6.9): 24/24 captures pass. Two
+  evidence-backed exclusions added for tshark limits (follow output on reordered streams; 4.2
+  misparsing a corrupt file).
+- Linux TSan and ASan+UBSan, GCC 13 and Clang 18: 144/144 on the merged pipeline code.
+- Claude usage limit was reached once mid-run and reset; work resumed without loss.
+
 ## Open
 
 - Linux scaling measurements for docs/results.md (PERF-6/7), 30-min fuzz campaign results, review findings.

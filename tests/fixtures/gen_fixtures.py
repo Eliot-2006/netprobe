@@ -450,6 +450,9 @@ def malformed_mix(rng):
         return bytes(b)
     cases = []
     cases.append((b"\x00" * 10, "truncated.ethernet.short_header"))
+    # Truncated headers only occur via snaplen: unpadded frames with orig_len > incl_len.
+    unpadded = set()
+    unpadded.add(len(cases))
     cases.append((raw_eth(0x0800, ip_ok[:10]), "truncated.ipv4.short_header"))
     cases.append((raw_eth(0x0800, patch(ip_ok, 0, 0x55)), "malformed.ipv4.bad_version"))
     cases.append((raw_eth(0x0800, patch(ip_ok, 0, 0x44)), "malformed.ipv4.bad_ihl"))
@@ -484,6 +487,7 @@ def malformed_mix(rng):
     v6bad = bytearray(bytes(IPv6(src="::1", dst="::2") / UDP()))
     v6bad[0] = 0x40
     cases.append((raw_eth(0x86DD, bytes(v6bad)), "malformed.ipv6.bad_version"))
+    unpadded.add(len(cases))
     cases.append((raw_eth(0x86DD, bytes(IPv6())[:30]), "truncated.ipv6.short_header"))
     jumbo = bytes(IPv6(src="::1", dst="::2", plen=0) /
                   IPv6ExtHdrHopByHop(options=[Jumbo(jumboplen=100)]) / UDP() / Raw(b"j" * 80))
@@ -496,12 +500,16 @@ def malformed_mix(rng):
     cases.append((raw_eth(0x0800, bytes(zero_len)), "ok"))  # anomaly: ipv4_zero_total_length
     cases.append((frame_bytes(Ether(src=MAC_C, dst=MAC_S) / IP(src="1.1.1.1", dst="2.2.2.2") /
                               TCP(flags="SF")), "ok"))  # anomaly: tcp_flags_invalid
-    frames = [frame_bytes(c[0]) if len(c[0]) >= 14 else c[0] for c in cases]
+    frames = [c[0] if (len(c[0]) < 14 or i in unpadded) else frame_bytes(c[0])
+              for i, c in enumerate(cases)]
     errors = {}
     for _, k in cases:
         if k != "ok":
             errors[k] = errors.get(k, 0) + 1
-    return records_from(frames), {
+    recs = records_from(frames)
+    for i in unpadded:
+        recs[i]["orig_len"] = 60
+    return recs, {
         "per_record": [k for _, k in cases],
         "decode_errors": errors,
         "anomalies": {"ipv4_bad_checksum": 1, "ipv4_zero_total_length": 1,

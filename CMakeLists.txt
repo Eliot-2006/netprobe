@@ -42,6 +42,10 @@ endif()
 # Fuzz builds instrument every library for coverage; only fuzz targets link libFuzzer's main.
 if(NETPROBE_BUILD_FUZZ)
   add_compile_options(-fsanitize=fuzzer-no-link)
+  if(APPLE)
+    # Apple's new linker rejects sanitizer-coverage relocations ("invalid r_symbolnum").
+    add_link_options(-Wl,-ld_classic)
+  endif()
 endif()
 if(NETPROBE_SANITIZE)
   # Sanitizers apply to everything (including gtest) so instrumentation is consistent.
@@ -61,6 +65,10 @@ target_link_libraries(netprobe_core PUBLIC Threads::Threads)
 
 add_executable(netprobe src/main.cpp)
 target_link_libraries(netprobe PRIVATE netprobe_core)
+if(NETPROBE_BUILD_FUZZ)
+  # Coverage-instrumented code only links into fuzzers; the CLI is not part of a fuzz build.
+  set_target_properties(netprobe PROPERTIES EXCLUDE_FROM_ALL ON)
+endif()
 
 include(FetchContent)
 

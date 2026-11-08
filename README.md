@@ -84,16 +84,17 @@ Sizes accept `K`, `M`, `G` suffixes (powers of 1024). Out-of-range values are a 
   lacks `std::format`, its ASan aborts at start-up on the development machine, and it has no
   libFuzzer. Set `CXX=/opt/homebrew/opt/llvm/bin/clang++`; CMake links LLVM's libc++ automatically.
   `scripts/demo.sh` picks this compiler itself when `CXX` is unset.
-- On macOS with Homebrew LLVM 23.1.5, the `dev`, `release` and `tsan` presets pass (144 tests; one
-  allocation-counting test is skipped under TSan). The `asan` preset builds but 3 tests abort
+- On macOS with Homebrew LLVM 23.1.5, the `dev`, `release`, `tsan` and `fuzz` presets work (the
+  fuzz build adds `-Wl,-ld_classic` there). The `asan` preset builds but tests that throw abort
   (`MappedFile.MissingFileThrowsInputErrorNamingPath`, `MappedFile.NonRegularFileRejected`,
-  `Pipeline.WorkerExceptionPropagatesWithoutHanging`: tests that throw), and the `fuzz` preset
-  fails to link. Run `asan` and `fuzz` on Linux (CI does).
+  `Pipeline.WorkerExceptionPropagatesWithoutHanging`): Homebrew's libc++abi and ASan's
+  `__cxa_throw` interposition disagree. Run `asan` on Linux (CI does).
 - On macOS, `MADV_DONTNEED` did not bound resident memory in the author's check, so the memory
   release frontier is effective on Linux only. See `docs/design.md`.
-- Sanitizer runs on Linux from a macOS host are optional; a Docker image of Ubuntu 24.04 with
-  `g++-13 clang-18 cmake ninja-build python3` is enough to run the `asan` and `tsan` presets. No
-  Dockerfile is shipped.
+- Linux runs from a macOS host: `tools/docker/Dockerfile` builds the Ubuntu 24.04 image used for
+  sanitizers, fuzzing, the tshark differential and benchmarks
+  (`docker build -t netprobe-dev:24.04 tools/docker`, then
+  `docker run --rm -v "$PWD":/src -w /src netprobe-dev:24.04 bench/run_linux_container.sh`).
 
 ## Repository layout
 

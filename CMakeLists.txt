@@ -39,6 +39,10 @@ if(NETPROBE_HARDENING)
     _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
     NETPROBE_DEBUG_GUARDS=1)
 endif()
+# Fuzz builds instrument every library for coverage; only fuzz targets link libFuzzer's main.
+if(NETPROBE_BUILD_FUZZ)
+  add_compile_options(-fsanitize=fuzzer-no-link)
+endif()
 if(NETPROBE_SANITIZE)
   # Sanitizers apply to everything (including gtest) so instrumentation is consistent.
   add_compile_options(-fsanitize=${NETPROBE_SANITIZE} -fno-omit-frame-pointer -fno-sanitize-recover=all)

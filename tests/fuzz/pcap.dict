@@ -1,0 +1,44 @@
+# PCAP magics (file byte order)
+magic_le_usec="\xD4\xC3\xB2\xA1"
+magic_le_nsec="\x4D\x3C\xB2\xA1"
+magic_be_usec="\xA1\xB2\xC3\xD4"
+magic_be_nsec="\xA1\xB2\x3C\x4D"
+magic_pcapng="\x0A\x0D\x0D\x0A"
+# version 2.4 in both byte orders
+ver_le="\x02\x00\x04\x00"
+ver_be="\x00\x02\x00\x04"
+# link type Ethernet, with FCS flag
+linktype_le="\x01\x00\x00\x00"
+linktype_fcs_le="\x01\x00\x00\x04"
+# EtherTypes
+et_ipv4="\x08\x00"
+et_ipv6="\x86\xDD"
+et_arp="\x08\x06"
+et_lldp="\x88\xCC"
+# VLAN TPIDs
+tpid_8021q="\x81\x00"
+tpid_8021ad="\x88\xA8"
+tpid_qinq="\x91\x00"
+# IPv4 version/IHL and common protocols
+ipv4_ihl5="\x45"
+ipv4_ihl15="\x4F"
+proto_tcp="\x06"
+proto_udp="\x11"
+proto_icmp="\x01"
+# IPv6 version and next-header values: HBH, Routing, Fragment, ESP, AH, DestOpts, ICMPv6, Mobility
+ipv6_ver="\x60\x00\x00\x00"
+nh_hbh="\x00"
+nh_routing="\x2B"
+nh_fragment="\x2C"
+nh_esp="\x32"
+nh_ah="\x33"
+nh_icmpv6="\x3A"
+nh_destopts="\x3C"
+nh_mobility="\x87"
+# jumbo payload option
+jumbo="\xC2\x04"
+# TCP options: MSS, window scale, SACK-permitted, timestamps
+opt_mss="\x02\x04"
+opt_ws="\x03\x03"
+opt_sackperm="\x04\x02"
+opt_ts="\x08\x0A"

@@ -6,12 +6,11 @@
 ## Build and test
 
 ```bash
-# Linux (GCC 13+/Clang 17+), or macOS with Apple Clang for plain builds
-cmake --preset dev && cmake --build --preset dev && ctest --preset dev
-
-# Sanitizers and fuzzing on macOS need Homebrew LLVM (Apple Clang 15's ASan does not start on
-# this macOS, and Apple Clang has no libFuzzer). CMake links LLVM's libc++ automatically.
+# macOS: always use Homebrew LLVM (Apple Clang 15 lacks std::format, its ASan aborts at init on
+# this macOS, and it has no libFuzzer). CMake links LLVM's libc++ automatically.
+# Linux: GCC 13+ or Clang 17+ (CI uses g++-13 and clang++-18).
 export CXX=/opt/homebrew/opt/llvm/bin/clang++
+cmake --preset dev && cmake --build --preset dev && ctest --preset dev
 cmake --preset asan && cmake --build --preset asan && ctest --preset asan
 cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan
 cmake --preset fuzz && cmake --build --preset fuzz   # targets: build/fuzz/fuzz_*

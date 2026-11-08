@@ -1,5 +1,6 @@
 #include "io/mapped_file.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstring>
 #include <string>
@@ -80,6 +81,21 @@ void MappedFile::reset() noexcept {
     }
 }
 
-void MappedFile::release_before(std::uint64_t) noexcept {}
+void MappedFile::release_before(std::uint64_t offset) noexcept {
+    const auto page_size = ::sysconf(_SC_PAGESIZE);
+    if (data_ == nullptr || page_size <= 0) {
+        return;
+    }
+    const auto page = static_cast<std::uint64_t>(page_size);
+    const auto end = std::min<std::uint64_t>(offset, size_) / page * page;
+    if (end == 0) {
+        return;
+    }
+#ifdef NETPROBE_DEBUG_GUARDS
+    ::mprotect(const_cast<std::byte*>(data_), static_cast<std::size_t>(end), PROT_NONE);
+#else
+    ::madvise(const_cast<std::byte*>(data_), static_cast<std::size_t>(end), MADV_DONTNEED);
+#endif
+}
 
 } // namespace netprobe

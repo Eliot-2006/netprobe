@@ -5,6 +5,7 @@
 #include "decode/decode.h"
 #include "io/mapped_file.h"
 #include "pcap/reader.h"
+#include "pipeline/pipeline.h"
 #include "report/report.h"
 
 #include <sys/resource.h>
@@ -102,9 +103,6 @@ std::optional<OpenedCapture> open_capture(const std::string& path) {
 } // namespace
 
 int run_analyze(const AnalyzeOptions& o) {
-    if (o.workers > 0) {
-        // ponytail: pipeline lands in M9; until then N > 0 runs inline with identical output.
-    }
     const auto t0 = std::chrono::steady_clock::now();
     auto cap = open_capture(o.input);
     if (!cap) {
@@ -129,14 +127,26 @@ int run_analyze(const AnalyzeOptions& o) {
     }
 
     ReaderStats reader_stats;
-    Analyzer analyzer(cfg);
-    PacketRecord rec;
-    while (cap->reader.next(rec)) {
-        const DecodedPacket pkt = decode_packet(rec);
-        reader_stats.add(rec, pkt);
-        analyzer.process(rec, pkt);
-    }
-    ShardResult result = analyzer.finish();
+    RunInfo run;
+    ShardResult result = [&] {
+        if (o.workers != 0) {
+            return run_pipeline(cap->reader, cap->file, cfg, o.workers, reader_stats, run);
+        }
+        Analyzer analyzer(cfg);
+        PacketRecord rec;
+        std::uint64_t released_offset = 0;
+        while (cap->reader.next(rec)) {
+            const DecodedPacket pkt = decode_packet(rec);
+            reader_stats.add(rec, pkt);
+            analyzer.process(rec, pkt);
+            const auto end = rec.file_offset + 16 + rec.data.size();
+            if (end - released_offset >= (64ull << 20)) {
+                cap->file.release_before(end);
+                released_offset = end;
+            }
+        }
+        return analyzer.finish();
+    }();
 
     Report report;
     report.options = &o;
@@ -149,6 +159,7 @@ int run_analyze(const AnalyzeOptions& o) {
     report.reader = &reader_stats;
     report.flows = &result;
     report.deterministic = o.deterministic;
+    report.run = std::move(run);
     report.run.workers = o.workers;
     report.run.elapsed_ns =
         std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - t0)

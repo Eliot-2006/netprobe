@@ -38,7 +38,7 @@ MappedFile MappedFile::open(const std::filesystem::path& path) {
     if (f.fd < 0) {
         fail(path, "open failed", errno);
     }
-    struct stat st{};
+    struct stat st = {};
     if (::fstat(f.fd, &st) != 0) {
         fail(path, "fstat failed", errno);
     }

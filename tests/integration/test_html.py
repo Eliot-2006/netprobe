@@ -53,7 +53,8 @@ def main():
             if "script" in c.tags:
                 failures.append(f"{pcap.name}: <script> element in output")
             external = [u for u in c.urls if re.match(r"^([a-z][a-z0-9+.-]*:|//)", u, re.I)]
-            external += re.findall(r"url\(\s*['\"]?(?:[a-z]+:|//)", doc, re.I)
+            external += [m for m in re.findall(r"url\(\s*['\"]?((?:[a-z]+:|//)[^)]{0,20})", doc, re.I)
+                         if not m.lower().startswith("data:")]
             external += re.findall(r"@import", doc)
             if external:
                 failures.append(f"{pcap.name}: external references {external[:3]}")

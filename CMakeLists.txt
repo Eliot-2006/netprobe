@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# PRD 12.2: release measurements use -O2 (CMake's Release default is -O3).
+set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG" CACHE STRING "" FORCE)
 
 option(NETPROBE_BUILD_TESTS "Build unit and integration tests" ON)
 option(NETPROBE_BUILD_BENCH "Build Google Benchmark suites and synth_pcap" OFF)
@@ -63,7 +65,8 @@ if(NETPROBE_BUILD_TESTS)
   FetchContent_Declare(googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG v1.15.2
-    GIT_SHALLOW TRUE)
+    GIT_SHALLOW TRUE
+    SYSTEM)
   set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(googletest)
@@ -109,8 +112,16 @@ if(NETPROBE_BUILD_BENCH)
   FetchContent_Declare(benchmark
     GIT_REPOSITORY https://github.com/google/benchmark.git
     GIT_TAG v1.9.1
-    GIT_SHALLOW TRUE)
+    GIT_SHALLOW TRUE
+    SYSTEM)
   set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+  set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE)
+  # Benchmark always builds with -pedantic-errors; Clang >= 22 flags its __COUNTER__ use.
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag(-Wno-c2y-extensions NETPROBE_HAS_WNO_C2Y)
+  if(NETPROBE_HAS_WNO_C2Y)
+    add_compile_options(-Wno-c2y-extensions)
+  endif()
   set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(benchmark)
   file(GLOB NETPROBE_BENCH_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/bench/*.cpp)

@@ -18,6 +18,20 @@ std::atomic<bool> g_count_allocs{false};
 std::atomic<std::size_t> g_allocs{0};
 } // namespace
 
+// TSan's runtime provides its own operator new/delete; replacing them there conflicts, so the
+// allocation-counting check only runs in non-TSan builds.
+#if defined(__SANITIZE_THREAD__)
+#define NETPROBE_COUNT_ALLOCS 0
+#elif defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#define NETPROBE_COUNT_ALLOCS 0
+#endif
+#endif
+#ifndef NETPROBE_COUNT_ALLOCS
+#define NETPROBE_COUNT_ALLOCS 1
+#endif
+
+#if NETPROBE_COUNT_ALLOCS
 // GCC flags free() inside replacement operator delete as mismatched; for a replacement whose
 // operator new uses malloc, free is the correct pairing.
 #if defined(__GNUC__) && !defined(__clang__)
@@ -66,6 +80,7 @@ void operator delete(void* p, const std::nothrow_t&) noexcept {
 void operator delete[](void* p, const std::nothrow_t&) noexcept {
     std::free(p);
 }
+#endif // NETPROBE_COUNT_ALLOCS
 
 using namespace netprobe;
 using namespace netprobe::test;
@@ -360,6 +375,9 @@ TEST(PcapIter, BigEndianRecordsParse) {
 
 // ---- no allocation on the read + decode path ----
 TEST(PcapIter, NextAndDecodeDoNotAllocate) {
+    if (!NETPROBE_COUNT_ALLOCS) {
+        GTEST_SKIP() << "allocation counting is unavailable under ThreadSanitizer";
+    }
     const ByteVec f = frame();
     std::vector<PcapRecordSpec> recs(20000, PcapRecordSpec{.data = f});
     const ByteVec file = pcap_file({}, recs);

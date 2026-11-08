@@ -44,7 +44,16 @@
 - Linux TSan and ASan+UBSan, GCC 13 and Clang 18: 144/144 on the merged pipeline code.
 - Claude usage limit was reached once mid-run and reset; work resumed without loss.
 
-## Open
+- **Final measurements** (docs/results.md section A): Linux container, GCC 13 -O2. PERF-1..7 and
+  PERF-M1 (at 1 GiB) met; PERF-M2 not met (≈ 790 B per flow, upper bound; cause recorded).
+  30-min instrumented fuzz campaign: 0 findings.
+- **Final gates on HEAD:** Linux TSan + ASan/UBSan with Clang 18 and GCC 13: 148/148 each; macOS dev
+  148/148; demo OK; tshark differential 24/24 on tshark 4.2.2 and 4.6.9; clang-format 18 clean.
 
-- Linux scaling measurements for docs/results.md (PERF-6/7), 30-min fuzz campaign results, review findings.
-- PERF targets were written for x86-64 Linux; only macOS arm64 and an arm64 Linux VM are available here.
+## Open (not done, by decision or constraint)
+
+- GitHub Actions has never run: pushing was not authorized. Every CI job's commands were run
+  locally (Linux container or macOS) instead.
+- PERF-M2 (per-flow memory ≤ 512 B) not met; upgrade path in docs/results.md A.4.
+- Not measured: 2 GiB datasets, x86-64 reference hardware, a real-world capture (R1).
+- Reader-thread ceiling on scaling (~2×) is measured and explained, not optimized.

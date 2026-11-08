@@ -6,14 +6,17 @@ namespace netprobe {
 
 DecodedPacket decode_packet(const PacketRecord& rec) noexcept {
     DecodedPacket p;
+    const std::uint32_t snaplen_cut =
+        rec.orig_len > rec.data.size() ? rec.orig_len - static_cast<std::uint32_t>(rec.data.size())
+                                       : 0;
     layers::Step s = layers::parse_ethernet(rec.data, p);
     if (s.status.ok()) {
         switch (p.ethertype) {
         case 0x0800:
-            s = layers::parse_ipv4(s.rest, p);
+            s = layers::parse_ipv4(s.rest, snaplen_cut, p);
             break;
         case 0x86DD:
-            s = layers::parse_ipv6(s.rest, p);
+            s = layers::parse_ipv6(s.rest, snaplen_cut, p);
             break;
         default: // ARP and everything else: counted by the caller, not decoded further
             p.status = s.status;

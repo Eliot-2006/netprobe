@@ -91,10 +91,12 @@ void MappedFile::release_before(std::uint64_t offset) noexcept {
     if (end == 0) {
         return;
     }
-#ifdef NETPROBE_DEBUG_GUARDS
-    ::mprotect(const_cast<std::byte*>(data_), static_cast<std::size_t>(end), PROT_NONE);
-#else
+    // Drop the pages in every build, so memory behaves the same with and without guards.
     ::madvise(const_cast<std::byte*>(data_), static_cast<std::size_t>(end), MADV_DONTNEED);
+#ifdef NETPROBE_DEBUG_GUARDS
+    // Debug/hardened builds also make released pages inaccessible: a dangling view faults
+    // instead of silently re-reading the file (enforces invariant O1).
+    ::mprotect(const_cast<std::byte*>(data_), static_cast<std::size_t>(end), PROT_NONE);
 #endif
 }
 

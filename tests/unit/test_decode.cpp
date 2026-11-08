@@ -672,3 +672,30 @@ TEST(Decode, EveryReasonValueProducedAndNamed) {
         EXPECT_NE(to_string(static_cast<DecodeKind>(i)), "?");
     }
 }
+
+// Real-world regression (tcpdump test capture kday4.pcap): an IPv4 header claiming 820 bytes in a
+// 66-byte frame that was NOT cut by snaplen. That is a lying header, not snaplen truncation;
+// treating it as truncation fed a phantom 768-byte segment into TCP reassembly.
+TEST(Decode, IpLengthBeyondWireLengthIsMalformedNotTruncated) {
+    const ByteVec f = v4_tcp({}, counting_bytes(100));
+    PacketRecord rec;
+    rec.data = Bytes(f.data(), f.size() - 60);
+    rec.orig_len = static_cast<std::uint32_t>(f.size() - 60); // nothing cut by the capture
+    expect_status(decode_packet(rec), DecodeKind::malformed, Layer::ipv4, Reason::bad_total_length);
+    rec.orig_len = static_cast<std::uint32_t>(f.size() - 10); // cut, but not enough to explain it
+    expect_status(decode_packet(rec), DecodeKind::malformed, Layer::ipv4, Reason::bad_total_length);
+    rec.orig_len = static_cast<std::uint32_t>(f.size()); // the wire had it: snaplen truncation
+    const DecodedPacket ok = decode_packet(rec);
+    EXPECT_TRUE(ok.status.ok());
+    EXPECT_TRUE(ok.l3_truncated);
+}
+
+TEST(Decode, Ipv6PayloadLengthBeyondWireLengthIsMalformed) {
+    const ByteVec f = eth(0x86DD, ipv6({}, tcp({}, counting_bytes(100))));
+    PacketRecord rec;
+    rec.data = Bytes(f.data(), f.size() - 60);
+    rec.orig_len = static_cast<std::uint32_t>(f.size() - 60);
+    expect_status(decode_packet(rec), DecodeKind::malformed, Layer::ipv6, Reason::bad_total_length);
+    rec.orig_len = static_cast<std::uint32_t>(f.size());
+    EXPECT_TRUE(decode_packet(rec).l3_truncated);
+}

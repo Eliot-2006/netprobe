@@ -126,6 +126,7 @@ struct ShardResult {
     std::vector<ExportRow> exported;
     std::uint64_t peak_flows = 0, evicted_flows = 0;
     bool limits_hit = false;
+    bool talkers_capped = false; // distinct addresses exceeded the flow limit
     bool export_failed = false;
 
     // Folds `o` into this result (sums, map unions, top-K merge).

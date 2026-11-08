@@ -99,7 +99,7 @@ Step parse_ethernet(Bytes f, DecodedPacket& p) noexcept {
     return ok_step(layer, rest, static_cast<std::uint32_t>(rest.size()));
 }
 
-Step parse_ipv4(Bytes l3, DecodedPacket& p) noexcept {
+Step parse_ipv4(Bytes l3, std::uint32_t snaplen_cut, DecodedPacket& p) noexcept {
     if (l3.size() < 20) {
         return short_hdr(Layer::ipv4);
     }
@@ -138,6 +138,9 @@ Step parse_ipv4(Bytes l3, DecodedPacket& p) noexcept {
         p.ip_zero_length = true;
         logical_total = l3.size();
     } else if (total > l3.size()) {
+        if (total > l3.size() + snaplen_cut) { // longer than the frame was on the wire
+            return fail_step(DecodeKind::malformed, Layer::ipv4, Reason::bad_total_length);
+        }
         p.l3_truncated = true;
     }
     const Bytes region = first(l3, logical_total);
@@ -151,7 +154,7 @@ Step parse_ipv4(Bytes l3, DecodedPacket& p) noexcept {
                    static_cast<std::uint32_t>(logical_total - hlen));
 }
 
-Step parse_ipv6(Bytes l3, DecodedPacket& p) noexcept {
+Step parse_ipv6(Bytes l3, std::uint32_t snaplen_cut, DecodedPacket& p) noexcept {
     if (l3.size() < 40) {
         return short_hdr(Layer::ipv6);
     }
@@ -179,6 +182,9 @@ Step parse_ipv6(Bytes l3, DecodedPacket& p) noexcept {
         p.ip_zero_length = true;
         logical = l3.size() - 40;
     } else if (plen > l3.size() - 40) {
+        if (plen > l3.size() - 40 + snaplen_cut) { // longer than the frame was on the wire
+            return fail_step(DecodeKind::malformed, Layer::ipv6, Reason::bad_total_length);
+        }
         p.l3_truncated = true;
     }
     Bytes region = first(l3.subspan(40), logical);

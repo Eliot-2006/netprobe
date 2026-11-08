@@ -4,6 +4,7 @@
 #include "tcp/stream_sink.h"
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <optional>
 #include <vector>
 namespace netprobe {
@@ -43,10 +44,11 @@ public:
     // seq already includes the SYN adjustment; captured is borrowed only for this call.
     void on_segment(std::uint32_t seq, std::uint32_t logical_len, Bytes captured, StreamSink& sink);
     // fin_seq is the sequence occupied by FIN, excluding its consumed sequence number.
-    void on_fin(std::uint32_t fin_seq) noexcept;
+    void on_fin(std::uint32_t fin_seq);
     void on_peer_ack(std::uint32_t ack) noexcept;
     void flush(StreamSink& sink);
-    const StreamStats& stats() const noexcept { return stats_; }
+    // Assembled on demand: rarely non-zero counters live out of line (see rare_).
+    StreamStats stats() const;
     std::uint64_t buffered_bytes() const noexcept { return buffered_accounted_; }
     std::uint64_t delivered_offset() const noexcept { return delivered_; }
     bool check_invariants() const;
@@ -62,15 +64,24 @@ private:
     void flush_with_incoming(std::uint64_t off, Bytes incoming, StreamSink& sink);
     void update_complete() noexcept;
     void release_acked_holes(StreamSink& sink);
+    using Map = std::map<std::uint64_t, Segment>;
+    // Out-of-order storage and anomaly counters are allocated on first use: most streams are in
+    // order and clean, and keeping both inline made each TCP flow ~300 bytes larger (PERF-M2).
+    Map& ooo();
+    bool ooo_empty() const noexcept { return !ooo_ptr_ || ooo_ptr_->empty(); }
+    StreamStats& rare();
+    std::uint64_t gap_count() const noexcept { return rare_ ? rare_->gap_count : 0; }
     SeqUnwrapper unwrap_;
     bool initialized_ = false;
     std::uint64_t delivered_ = 0, highest_end_ = 0, max_acked_ = 0;
     std::optional<std::uint64_t> fin_offset_;
-    std::map<std::uint64_t, Segment> ooo_;
+    std::unique_ptr<Map> ooo_ptr_;
     std::uint64_t buffered_accounted_ = 0;
     MemoryBudget* budget_;
     ReassemblyLimits limits_;
-    StreamStats stats_;
+    std::uint64_t delivered_bytes_ = 0;
+    bool fin_seen_ = false, complete_ = false;
+    std::unique_ptr<StreamStats> rare_; // every StreamStats counter except the three above
 };
-static_assert(sizeof(StreamReassembler) <= 256);
+static_assert(sizeof(StreamReassembler) <= 112);
 } // namespace netprobe

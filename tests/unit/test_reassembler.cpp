@@ -190,7 +190,10 @@ TEST_F(Reassembler, OutOfWindowAndZeroLengthNoOp) {
     check();
     stream.on_segment(100, 0, data, sink);
     check();
-    EXPECT_EQ(stream.stats().out_of_window_segments, 2);
+    // 2^30 ahead is out of window; one byte before the origin is old data (a retransmission of
+    // something sent before the capture began), not out of window.
+    EXPECT_EQ(stream.stats().out_of_window_segments, 1);
+    EXPECT_EQ(stream.stats().retransmitted_segments, 1);
     EXPECT_EQ(stream.delivered_offset(), 0);
     EXPECT_EQ(budget.current(), 0);
 }
@@ -457,4 +460,25 @@ TEST(ReassemblyReview, AckWatermarkTracksBeyondWindowWithoutData) {
     s.flush(sink);
     ASSERT_FALSE(s.stats().gaps.empty());
     EXPECT_TRUE(s.stats().gaps[0].acked); // the ACKs past 2^30 were not lost
+}
+
+// Real-world regression (tcpreplay smallFlows.pcap): in a mid-stream pickup the origin is the
+// first observed sequence number; retransmissions of earlier data sit behind it. They are old
+// data, not out-of-window, and a segment straddling the origin still delivers its new bytes.
+TEST(ReassemblyReview, DataBeforeMidstreamOriginIsOldNotOutOfWindow) {
+    MemoryBudget budget{1U << 20};
+    StreamReassembler s{budget, {1U << 20}};
+    test::RecordingSink sink;
+    s.init(1000);
+    std::vector<std::byte> seg(200, std::byte{9});
+    s.on_segment(500, 100, Bytes(seg).first(100), sink); // entirely before the origin
+    EXPECT_EQ(s.stats().out_of_window_segments, 0u);
+    EXPECT_EQ(s.stats().retransmitted_segments, 1u);
+    EXPECT_EQ(s.delivered_offset(), 0u);
+    s.on_segment(900, 200, seg, sink); // 100 old bytes, then 100 new ones at offset 0
+    EXPECT_EQ(s.stats().out_of_window_segments, 0u);
+    EXPECT_EQ(s.stats().retransmitted_bytes, 200u);
+    EXPECT_EQ(s.delivered_offset(), 100u);
+    EXPECT_EQ(s.stats().delivered_bytes, 100u);
+    EXPECT_TRUE(s.check_invariants());
 }

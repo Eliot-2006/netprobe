@@ -127,7 +127,10 @@ void Analyzer::process(const PacketRecord& rec, const DecodedPacket& pkt) {
         const auto fl = pkt.tcp_flags;
         const bool new_syn = tcp && (fl & tcp_flag::syn) && !(fl & tcp_flag::ack) &&
                              !tcp_flags_invalid(fl) && f.closing &&
-                             (!f.dir[idx(dir)].syn || f.dir[idx(dir)].isn != pkt.seq);
+                             (f.rst || !f.dir[idx(dir)].syn || f.dir[idx(dir)].isn != pkt.seq);
+        // After a RST the connection is gone, so even a same-ISN SYN is a new attempt
+        // (connection-refused retries in tcpreplay's bigFlows.pcap). After a FIN close a
+        // same-ISN SYN may still be a retransmission, so the ISN must differ.
         if (rec.ts_ns - f.last_ts > timeout) {
             finalize(it, f.closing ? natural_close(f) : CloseReason::idle_timeout);
             it = flows_.end();
@@ -204,9 +207,14 @@ void Analyzer::update(Flow& f, Direction d, const PacketRecord& rec, const Decod
     }
 
     const std::uint32_t start = pkt.seq + (syn ? 1u : 0u);
-    if (pkt.payload_logical_len > 0) {
+    if (pkt.payload_logical_len > 0 && (fl & tcp_flag::rst)) {
+        // RST payload is diagnostic text, never delivered to the application (RFC 9293
+        // 3.5.3); count it like other post-reset data. Real-world case: tcpdump's
+        // tests/tcp_rst_data.pcap.
+        ++ds.data_after_rst;
+    } else if (pkt.payload_logical_len > 0) {
         if (cfg_.export_dir) {
-            FileExportSink sink(*cfg_.export_dir, f.id, d == f.client_dir);
+            FileExportSink sink(stream_work_file(*cfg_.export_dir, f.id, d == Direction::lo_to_hi));
             mine.on_segment(start, pkt.payload_logical_len, pkt.payload, sink);
             result_.export_failed = result_.export_failed || sink.failed();
         } else {
@@ -234,12 +242,24 @@ void Analyzer::finalize(Map::iterator it, CloseReason reason) {
     if (tcp) {
         for (Direction d : {c, s}) {
             if (cfg_.export_dir) {
-                FileExportSink sink(*cfg_.export_dir, f.id, d == c);
+                FileExportSink sink(
+                    stream_work_file(*cfg_.export_dir, f.id, d == Direction::lo_to_hi));
                 f.reasm[idx(d)].flush(sink);
                 result_.export_failed = result_.export_failed || sink.failed();
             } else {
                 NullSink sink;
                 f.reasm[idx(d)].flush(sink);
+            }
+        }
+        if (cfg_.export_dir) { // orientation is final now: give the files their c2s/s2c names
+            for (Direction d : {c, s}) {
+                const auto work =
+                    stream_work_file(*cfg_.export_dir, f.id, d == Direction::lo_to_hi);
+                std::error_code ec;
+                if (std::filesystem::exists(work, ec)) {
+                    std::filesystem::rename(work, stream_file(*cfg_.export_dir, f.id, d == c), ec);
+                    result_.export_failed = result_.export_failed || ec;
+                }
             }
         }
     }
@@ -308,14 +328,24 @@ void Analyzer::finalize(Map::iterator it, CloseReason reason) {
         result_.limits_hit = true;
     }
 
-    auto& tc = result_.talkers[sum.client.addr];
-    tc.bytes_sent += sum.c2s.bytes;
-    tc.bytes_received += sum.s2c.bytes;
-    ++tc.flows;
-    auto& ts = result_.talkers[sum.server.addr];
-    ts.bytes_sent += sum.s2c.bytes;
-    ts.bytes_received += sum.c2s.bytes;
-    ++ts.flows;
+    // One entry per distinct address: bounded at the shard's flow limit so spoofed sources cannot
+    // grow it without limit (independent audit, PRD G3). Beyond the cap new addresses are not
+    // tracked and the report says the talker list is incomplete.
+    auto add_talker = [this](const IpAddr& a, std::uint64_t sent, std::uint64_t received) {
+        auto found = result_.talkers.find(a);
+        if (found == result_.talkers.end()) {
+            if (result_.talkers.size() >= cfg_.max_flows) {
+                result_.talkers_capped = true;
+                return;
+            }
+            found = result_.talkers.emplace(a, Talker{}).first;
+        }
+        found->second.bytes_sent += sent;
+        found->second.bytes_received += received;
+        ++found->second.flows;
+    };
+    add_talker(sum.client.addr, sum.c2s.bytes, sum.s2c.bytes);
+    add_talker(sum.server.addr, sum.s2c.bytes, sum.c2s.bytes);
     const std::uint16_t service_port = tcp && sum.orientation_handshake
                                            ? sum.server.port
                                            : std::min(sum.client.port, sum.server.port);

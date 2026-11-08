@@ -10,6 +10,11 @@ std::filesystem::path stream_file(const std::filesystem::path& dir, std::uint64_
     return dir / (std::to_string(flow_id) + (c2s ? "_c2s.bin" : "_s2c.bin"));
 }
 
+std::filesystem::path stream_work_file(const std::filesystem::path& dir, std::uint64_t flow_id,
+                                       bool lo_to_hi) {
+    return dir / (std::to_string(flow_id) + (lo_to_hi ? "_lo.part" : "_hi.part"));
+}
+
 void FileExportSink::on_data(std::uint64_t, Bytes data) {
     if (failed_ || data.empty()) {
         return;

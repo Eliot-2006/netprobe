@@ -104,6 +104,11 @@ if(NETPROBE_BUILD_TESTS)
       add_test(NAME integration.${name}
         COMMAND ${Python3_EXECUTABLE} -I ${script} --netprobe $<TARGET_FILE:netprobe>
                 --source-dir ${CMAKE_SOURCE_DIR})
+      if(NETPROBE_SANITIZE)
+        # Lets resource-measuring tests skip: sanitizer shadow memory inflates RSS.
+        set_tests_properties(integration.${name} PROPERTIES ENVIRONMENT
+          "NETPROBE_SANITIZED=${NETPROBE_SANITIZE}")
+      endif()
     endforeach()
   endif()
 endif()

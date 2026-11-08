@@ -285,6 +285,8 @@ TEST(PcapIter, InclLenOverMaxIsCorruptAndStopsIteration) {
         ASSERT_TRUE(r.reader->next(rec));
         EXPECT_FALSE(r.reader->next(rec));
         EXPECT_EQ(r.reader->status(), CaptureStatus::corrupt);
+        // Everything from the corrupt header on is skipped and reported (independent audit L4).
+        EXPECT_EQ(r.reader->truncated_tail_bytes(), bad.size() + after.size());
         EXPECT_FALSE(r.reader->next(rec)); // never resynchronizes onto the later record
     }
 }

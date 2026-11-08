@@ -50,10 +50,29 @@
 - **Final gates on HEAD:** Linux TSan + ASan/UBSan with Clang 18 and GCC 13: 148/148 each; macOS dev
   148/148; demo OK; tshark differential 24/24 on tshark 4.2.2 and 4.6.9; clang-format 18 clean.
 
+- **Publication:** PR #1 merged to `main`; README, screenshots and GitHub Pages sample reports
+  (`f71c2bd`). GitHub Actions `ci` ran green on the PR and on every push to `main` (`89e9432`,
+  `e0e04b4`, `f71c2bd`); Pages deployed.
+- **Real-world validation** (docs/validation.md): 787 public captures (tcpdump test suite at
+  `f34cf40`, tcpreplay smallFlows/bigFlows; none committed). ASan+UBSan sweep: 1,574 runs, 0
+  failures. tshark 4.2.2 differential: 448 captures, 0 failures after fixing four NetProbe bugs
+  (lying IP length, RST payload, pre-origin retransmissions, same-ISN SYN after RST) and the
+  comparison script's own errors. Stream oracle is now an independent payload rebuild.
+- **Final audit** (Claude subagent; the Codex audit was stopped by OpenAI's cybersecurity content
+  filter and not worked around): pipeline release stall fixed (mostly-ARP 217 MiB capture,
+  `-j 2`: 222 → 133 MiB RSS; regression `test_release_frontier.py`), plus export orientation, repeated export, unbounded talkers, `--html -`, corrupt-tail byte count, `on_fin` under
+  `noexcept`, per-shard `max_flows`. Two items documented as limitations (design.md 11).
+- **PERF-M2:** out-of-line rare counters and lazy out-of-order map; `Analyzer::Flow` 664 → 360 B,
+  ≈ 790 → ≈ 490 B per live flow measured: target met.
+- **Final benchmarks** (docs/results.md A.2b): 1 GiB and 2 GiB D1/D2/D3 in the Linux container on
+  a loaded host (macOS daemons, load 5–7), so absolute numbers are noisy; an interleaved A/B of
+  `f71c2bd` vs the final tree shows no slowdown (D1 faster, 54 MiB smaller). PERF-M1 holds at
+  2 GiB (D2 34–78 MiB).
+- **Gates on the final tree:** Linux TSan and ASan+UBSan with Clang 18 and GCC 13, GCC 13
+  hardened Debug, Clang 18 hardened Release: 156/156 each; macOS dev 156/156.
+
 ## Open (not done, by decision or constraint)
 
-- GitHub Actions has never run: pushing was not authorized. Every CI job's commands were run
-  locally (Linux container or macOS) instead.
-- PERF-M2 (per-flow memory ≤ 512 B) not met; upgrade path in docs/results.md A.4.
-- Not measured: 2 GiB datasets, x86-64 reference hardware, a real-world capture (R1).
+- No x86-64 machine was available (only an Apple M3 Pro); emulated x86-64 under Docker would
+  measure the emulator, so no x86-64 numbers exist.
 - Reader-thread ceiling on scaling (~2×) is measured and explained, not optimized.

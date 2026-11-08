@@ -123,6 +123,14 @@ int run_analyze(const AnalyzeOptions& o) {
                          o.export_dir->c_str());
             return exit_output;
         }
+        if (!fs::is_empty(*o.export_dir, ec) || ec) {
+            // Stream files are appended per delivered chunk; a second run into the same
+            // directory would double every stream. Refuse rather than delete the user's files.
+            std::fprintf(stderr,
+                         "netprobe: export directory '%s' is not empty; use a new or empty one\n",
+                         o.export_dir->c_str());
+            return exit_output;
+        }
         cfg.export_dir = fs::path(*o.export_dir);
     }
 

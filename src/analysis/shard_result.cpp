@@ -163,6 +163,7 @@ void ShardResult::merge(ShardResult&& o) {
     peak_flows += o.peak_flows;
     evicted_flows += o.evicted_flows;
     limits_hit = limits_hit || o.limits_hit;
+    talkers_capped = talkers_capped || o.talkers_capped;
     export_failed = export_failed || o.export_failed;
 }
 

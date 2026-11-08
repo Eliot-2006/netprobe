@@ -59,12 +59,17 @@ ShardResult run_pipeline(PcapReader& reader, MappedFile& file, const AnalyzerCon
         }
     };
     AnalyzerConfig shard_config = config;
-    shard_config.max_flows /= workers;
+    shard_config.max_flows = std::max<std::uint64_t>(1, shard_config.max_flows / workers);
     shard_config.reassembly_budget /= workers;
     std::vector<std::jthread> threads;
     threads.reserve(workers);
     std::exception_ptr reader_error;
     std::uint64_t reader_offset = 24, released_offset = 0, submitted_batches = 0;
+    // Release also by reader progress, not only by submitted batches: a capture dominated by
+    // non-flow packets (ARP, ICMP, malformed) submits few batches and otherwise kept the whole
+    // file resident (independent audit; 290 MB mostly-ARP capture: 294 MiB RSS vs 68 MiB inline).
+    constexpr std::uint64_t release_interval = 64ULL << 20;
+    std::uint64_t next_release_check = release_interval;
     auto release = [&] {
         auto frontier = reader_offset;
         for (const auto& shard : shards) {
@@ -157,6 +162,22 @@ ShardResult run_pipeline(PcapReader& reader, MappedFile& file, const AnalyzerCon
         }
         PacketRecord record;
         while (!failed.load(std::memory_order_acquire) && reader.next(record)) {
+            // Check before advancing reader_offset: release() frees pages below reader_offset, so
+            // it must not yet include the record that has just been read but not decoded (O1).
+            if (record.file_offset >= next_release_check) {
+                next_release_check = record.file_offset + release_interval;
+                bool ok = true;
+                for (auto& shard : shards) { // a partial batch would pin its first packet's page
+                    if (shard->filling && shard->filling->size != 0 && !submit(*shard)) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (!ok) {
+                    break;
+                }
+                release();
+            }
             reader_offset = record.file_offset + 16 + record.data.size();
             const auto packet = decode_packet(record);
             stats.add(record, packet);

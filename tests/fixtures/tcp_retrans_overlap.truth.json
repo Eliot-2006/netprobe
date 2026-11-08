@@ -1,0 +1,36 @@
+{
+  "fixture": "tcp_retrans_overlap",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "min_retransmitted_bytes": 6300,
+  "records": 20,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 100,
+        "sha256": "cbb5d08d25753ec7aa822336c60a5202149e847bdcd1944c912b8ccef6f491cc"
+      },
+      "client": [
+        "10.3.0.1",
+        33002
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 6000,
+        "sha256": "c9c5d00d73fdf44997c866883e0ed187ec50cd62376292b5589e99256aa0efb6"
+      },
+      "server": [
+        "10.3.0.2",
+        9000
+      ]
+    }
+  ]
+}

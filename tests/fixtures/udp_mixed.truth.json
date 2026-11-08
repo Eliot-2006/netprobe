@@ -1,0 +1,16 @@
+{
+  "fixture": "udp_mixed",
+  "flows": {
+    "tcp": 0,
+    "udp": 6
+  },
+  "layers": {
+    "arp": 1,
+    "icmp": 1,
+    "ipv4": 11,
+    "ipv6": 1,
+    "udp": 11
+  },
+  "records": 13,
+  "status": "complete"
+}

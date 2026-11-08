@@ -1,0 +1,17 @@
+{
+  "decode_errors": {
+    "unsupported.ipv6_ext.ipv6_ext": 1
+  },
+  "fixture": "ipv6_ext_headers",
+  "flows": {
+    "tcp": 1,
+    "udp": 1
+  },
+  "layers": {
+    "ipv6": 3,
+    "tcp": 1,
+    "udp": 1
+  },
+  "records": 3,
+  "status": "complete"
+}

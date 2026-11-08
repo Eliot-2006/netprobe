@@ -1,0 +1,5 @@
+{
+  "fixture": "corrupt_record",
+  "records": 2,
+  "status": "corrupt"
+}

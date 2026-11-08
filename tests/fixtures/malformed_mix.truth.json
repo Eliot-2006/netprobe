@@ -1,0 +1,50 @@
+{
+  "anomalies": {
+    "ipv4_bad_checksum": 1,
+    "ipv4_zero_total_length": 1,
+    "tcp_flags_invalid": 1
+  },
+  "decode_errors": {
+    "malformed.ipv4.bad_ihl": 1,
+    "malformed.ipv4.bad_total_length": 1,
+    "malformed.ipv4.bad_version": 1,
+    "malformed.ipv6.bad_version": 1,
+    "malformed.tcp.tcp_data_offset": 2,
+    "malformed.udp.udp_length": 2,
+    "truncated.ethernet.short_header": 1,
+    "truncated.ipv4.short_header": 1,
+    "truncated.ipv6.short_header": 1,
+    "truncated.tcp.short_header": 1,
+    "unsupported.ethernet.llc": 1,
+    "unsupported.ipv6_ext.ipv6_ext": 1,
+    "unsupported.ipv6_ext.ipv6_ext_chain": 1,
+    "unsupported.ipv6_ext.ipv6_jumbo": 1,
+    "unsupported.vlan.vlan_depth": 1
+  },
+  "fixture": "malformed_mix",
+  "per_record": [
+    "truncated.ethernet.short_header",
+    "truncated.ipv4.short_header",
+    "malformed.ipv4.bad_version",
+    "malformed.ipv4.bad_ihl",
+    "malformed.ipv4.bad_total_length",
+    "truncated.tcp.short_header",
+    "malformed.tcp.tcp_data_offset",
+    "malformed.tcp.tcp_data_offset",
+    "ok",
+    "malformed.udp.udp_length",
+    "malformed.udp.udp_length",
+    "unsupported.vlan.vlan_depth",
+    "unsupported.ethernet.llc",
+    "unsupported.ipv6_ext.ipv6_ext",
+    "unsupported.ipv6_ext.ipv6_ext_chain",
+    "malformed.ipv6.bad_version",
+    "truncated.ipv6.short_header",
+    "unsupported.ipv6_ext.ipv6_jumbo",
+    "ok",
+    "ok",
+    "ok"
+  ],
+  "records": 21,
+  "status": "complete"
+}

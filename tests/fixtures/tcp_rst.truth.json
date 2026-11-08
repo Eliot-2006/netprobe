@@ -1,0 +1,36 @@
+{
+  "fixture": "tcp_rst",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "min_data_after_rst": 1,
+  "records": 9,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 500,
+        "sha256": "e014ae52a2be682a831b235b13bb135951161fd9f8871f243f423e0440b99f53"
+      },
+      "client": [
+        "10.7.0.1",
+        33006
+      ],
+      "close": "rst",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 3000,
+        "sha256": "181166626febe6101af3f1890f96a38edaad503c3948558aecb251c4f318ff9d"
+      },
+      "server": [
+        "10.7.0.2",
+        9004
+      ]
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "fixture": "tcp_conflict_overlap",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "min_conflicting_overlap_bytes": 1000,
+  "records": 12,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 100,
+        "sha256": "2889f38d9a8b3153d905167c21e226dae5cfc1dc53b61d16948e0f5716fc5b69"
+      },
+      "client": [
+        "10.4.0.1",
+        33003
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": true,
+        "gaps": [],
+        "length": 3000,
+        "sha256": "8664819a6067667833e10811031366c6ad5fbd0d8fb8f8e65d87b2d9b1ca7358"
+      },
+      "server": [
+        "10.4.0.2",
+        9001
+      ]
+    }
+  ]
+}

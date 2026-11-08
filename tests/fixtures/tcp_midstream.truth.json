@@ -1,0 +1,35 @@
+{
+  "fixture": "tcp_midstream",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "records": 8,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 2000,
+        "sha256": "efc528537f526d892c6e7def86e281eb740cde6ff9489923bbc35fd0b1d238b7"
+      },
+      "client": [
+        "10.6.0.1",
+        33005
+      ],
+      "close": "fin",
+      "handshake": "none",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 4000,
+        "sha256": "c6c3d36d9acd0004a01dd33a96d5e4d19103531537f01b7395726b2cb0dd9060"
+      },
+      "server": [
+        "10.6.0.2",
+        9003
+      ]
+    }
+  ]
+}

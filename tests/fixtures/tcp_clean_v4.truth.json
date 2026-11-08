@@ -1,0 +1,39 @@
+{
+  "fixture": "tcp_clean_v4",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "layers": {
+    "ipv4": 14,
+    "tcp": 14
+  },
+  "records": 14,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 91,
+        "sha256": "5587546b08df96c139077e1bd245cb60ebc6e1e4a4046d3855912b2b70d48fc5"
+      },
+      "client": [
+        "10.0.0.5",
+        51544
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 6067,
+        "sha256": "bcb59621ddff95b598981b6a1207eb9413940f3274353cb765adf8384a206d35"
+      },
+      "server": [
+        "10.0.0.80",
+        80
+      ]
+    }
+  ]
+}

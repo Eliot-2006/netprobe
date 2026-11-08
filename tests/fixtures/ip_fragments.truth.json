@@ -1,0 +1,15 @@
+{
+  "fixture": "ip_fragments",
+  "flows": {
+    "tcp": 0,
+    "udp": 0
+  },
+  "layers": {
+    "ip_fragments": 6,
+    "ipv4": 4,
+    "ipv6": 2,
+    "udp": 0
+  },
+  "records": 6,
+  "status": "complete"
+}

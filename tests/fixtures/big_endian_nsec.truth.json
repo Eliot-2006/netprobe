@@ -1,0 +1,35 @@
+{
+  "fixture": "big_endian_nsec",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "records": 10,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 50,
+        "sha256": "6cb4d97ad3021f8830fe385ab133f67fb56a352ab8af7dce485a397534dd95c4"
+      },
+      "client": [
+        "10.14.0.1",
+        33013
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 1200,
+        "sha256": "77d235804cf00dcc7e748ac1563a1b927441282fe59f2eddbbeeaf1299e37917"
+      },
+      "server": [
+        "10.14.0.2",
+        80
+      ]
+    }
+  ]
+}

@@ -120,7 +120,9 @@ std::string render_json(const Report& r) {
 
     w.key("options");
     w.begin_object();
-    w.field("workers", o.workers);
+    if (!r.deterministic) {
+        w.field("workers", o.workers); // the deterministic contract is identical for any -j
+    }
     w.field("idle_timeout_s", o.idle_timeout_s);
     w.field("max_flows", o.max_flows);
     w.field("max_stream_buffer", o.max_stream_buffer);

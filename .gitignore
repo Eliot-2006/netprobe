@@ -1,0 +1,12 @@
+/build/
+/out/
+/.venv/
+/datasets/
+__pycache__/
+*.profraw
+*.profdata
+crash-*
+leak-*
+timeout-*
+oom-*
+.DS_Store

@@ -1,0 +1,80 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: gcc-release, cxx: g++-13, preset: release }
+          - { name: gcc-dev, cxx: g++-13, preset: dev }
+          - { name: clang-release, cxx: clang++-18, preset: release }
+          - { name: asan, cxx: clang++-18, preset: asan }
+          - { name: tsan, cxx: clang++-18, preset: tsan }
+    name: ${{ matrix.name }}
+    env:
+      CXX: ${{ matrix.cxx }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }}
+      - run: ctest --preset ${{ matrix.preset }}
+        env:
+          # TSan on newer kernels needs lower ASLR entropy.
+          TSAN_OPTIONS: halt_on_error=1
+
+  fuzz-smoke:
+    runs-on: ubuntu-24.04
+    env:
+      CXX: clang++-18
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - run: sudo sysctl vm.mmap_rnd_bits=28
+      - run: cmake --preset fuzz && cmake --build --preset fuzz
+      - name: Run each fuzz target for 60 s
+        run: |
+          shopt -s nullglob
+          for f in build/fuzz/fuzz_*; do
+            name=$(basename "$f")
+            mkdir -p "corpus/$name"
+            seeds="tests/fuzz/corpus/$name"
+            [ -d "$seeds" ] || seeds=""
+            "$f" -max_total_time=60 -print_final_stats=1 "corpus/$name" $seeds
+          done
+
+  differential:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          sudo apt-get update
+          echo "wireshark-common wireshark-common/install-setuid boolean false" | sudo debconf-set-selections
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ninja-build tshark
+      - run: cmake --preset release && cmake --build --preset release
+      - run: tshark --version | head -1
+      - run: |
+          shopt -s nullglob
+          for f in tests/fixtures/*.pcap; do
+            python3 -I tests/differential/compare_tshark.py --netprobe build/release/netprobe "$f"
+          done
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-18
+      - run: |
+          git ls-files '*.h' '*.cpp' | xargs clang-format-18 --dry-run -Werror
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install ninja
+      - run: cmake --preset dev && cmake --build --preset dev && ctest --preset dev

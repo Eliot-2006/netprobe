@@ -233,7 +233,9 @@ data, declares the holes between them, and returns. Because the check precedes t
 implementation never exceeds the limit, which is stricter than the PRD's "limit plus one segment".
 
 **After FIN and RST.** `on_fin` records the stream end, discards buffered data past it, and later
-data beyond it is trimmed and counted as `data_after_fin`. After a flow sees RST, further payload
+data beyond it is trimmed; every segment dropped or trimmed at the FIN boundary counts as
+`data_after_fin`. A FIN whose offset lies behind already delivered data is ignored: honoring it
+would discard the buffer and every later byte (found by the independent review). After a flow sees RST, further payload
 is not reassembled and is counted as `data_after_rst`.
 
 ## 7. Concurrency
@@ -336,8 +338,13 @@ Four independent oracles (PRD 11.1), so no component is tested only against itse
    run has not been recorded in this repository.
 3. **`tshark`.** `tests/differential/compare_tshark.py` compares `netprobe dump` against
    `tshark -T fields` per packet, conversations, and followed stream bytes, with documented
-   exclusions (fragments, streams with gaps or conflicts, data after RST, malformed packets).
-   It needs `tshark` installed and runs in CI; it is not part of `ctest`.
+   exclusions (fragments, streams with gaps or conflicts, data after RST, malformed packets,
+   streams with out-of-order or retransmitted segments, per-packet checks on corrupt files).
+   The last two are tshark limitations found on evidence: its follow output for
+   `samples/lossy_bulk_transfer.pcap` stream 1 is 93,514 bytes although the FIN fixes the
+   stream at 96,360 (which NetProbe delivers, as it does for all six equal-length synthetic flows),
+   and tshark 4.2 misparses `corrupt_record.pcap`. Passes on all 21 fixtures and 3 samples with
+   tshark 4.2.2 (Linux) and 4.6.9 (macOS). It runs in CI; it is not part of `ctest`.
 4. **Cross-configuration determinism.** Section 7.
 
 Other layers: `tests/unit/` (GoogleTest) covers bytes, reader (including truncation sweeps and an
@@ -346,7 +353,11 @@ decode reason, flow key and shard balance, sequence arithmetic, reassembler, ana
 linger, port reuse, eviction, a 100k-SYN flood, budget bounds), JSON writer, CLI parser, SPSC ring
 and pipeline. Three libFuzzer targets (`fuzz_decode`, `fuzz_pcap`, `fuzz_reassembly`) have seed
 corpora and a dictionary; CI runs each for 60 s. The PRD asks for 30 minutes per target and
-recorded stats; those runs are not recorded in `docs/results.md`.
+recorded stats; see `docs/results.md`. Fuzz builds compile every library with
+`-fsanitize=fuzzer-no-link`; before that fix only the harnesses were instrumented, so libFuzzer had
+almost no coverage feedback from `netprobe_core` (fuzz_reassembly sat at 23 edges after 67 M
+executions; 249 edges within 20 s once instrumented). Execution counts from before the fix carry
+little coverage weight.
 
 Sanitizers: the `asan` preset is ASan + UBSan with `-fno-sanitize-recover=all`, the `tsan` preset
 runs the same suite under ThreadSanitizer, and `dev` enables standard-library hardening plus the
@@ -382,6 +393,13 @@ build and test run. CI does not gate on performance.
 - **Google Benchmark build.** v1.9.1 does not compile under Clang >= 22's `-Wc2y-extensions`
   with its own `-pedantic-errors`; the build now treats it as a SYSTEM dependency and adds
   `-Wno-c2y-extensions` where supported.
+
+- **Independent review fixes (`c6e99d6`).** A second model (Gemini 3.8 Flash via Antigravity)
+  reviewed the core. Fixed with regression tests: stale FIN behind delivered data, uncounted bytes
+  past FIN, orientation after stray pre-SYN packets, ACK unwrapping past 2^30 without data. One
+  finding (timeline width overflow) was rejected with evidence; deliberate deviations are listed
+  in PRD section 2.3.
+- **Fuzz instrumentation (`8d4b4bc`).** See section 9.
 
 ## 11. Known limitations
 

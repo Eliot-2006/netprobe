@@ -10,3 +10,4 @@ leak-*
 timeout-*
 oom-*
 .DS_Store
+/.impeccable/review/

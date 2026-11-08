@@ -19,3 +19,8 @@ Integration branch: `netprobe-cpp-prd-b41031f2`. Worker branches are merged with
 | M10b | docs/design.md, README | worker `docs` (Claude Sonnet) | done |
 | M10c | Linux scaling + RSS measurements, 30-min fuzz campaign, final results.md | orchestrator | done |
 | Review | Independent core review (Antigravity / Gemini 3.8 Flash): 4 fixed, 1 rejected, 4 documented | worker `review` | done |
+| Pub | PR #1 merged, README, screenshots, Pages sample reports; CI green on `main` | orchestrator | done |
+| V1 | Real-world validation: 787 public captures, ASan sweep, tshark differential, 4 bugs fixed (docs/validation.md) | orchestrator | done |
+| A2 | Final audit (Claude subagent; Codex blocked by provider filter): release stall + 7 more fixed | orchestrator + audit subagent | done |
+| M2 | PERF-M2 per-flow memory ≈ 790 → ≈ 490 B (lazy out-of-order map, out-of-line rare counters) | orchestrator | done |
+| P2 | Final-code Linux benchmarks at 1 GiB and 2 GiB (no x86-64 hardware available) | orchestrator | done |

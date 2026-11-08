@@ -267,9 +267,16 @@ void Page::warnings() {
     if (cap.status != CaptureStatus::complete) {
         w.push_back(
             {std::string(to_string(cap.status)),
-             std::format("The file ends early ({} trailing bytes could not be read). This "
-                         "report covers the first {} records.",
-                         format_count(cap.truncated_tail_bytes), format_count(rs_.packets()))});
+             cap.status == CaptureStatus::corrupt
+                 ? std::format(
+                       "A record header is corrupt (length above 262,144 bytes); PCAP cannot "
+                       "resynchronize, so the remaining {} bytes were skipped. This report "
+                       "covers the first {} records.",
+                       format_count(cap.truncated_tail_bytes), format_count(rs_.packets()))
+                 : std::format("The file ends early ({} trailing bytes could not be read). This "
+                               "report covers the first {} records.",
+                               format_count(cap.truncated_tail_bytes),
+                               format_count(rs_.packets()))});
     }
     if (sr_.limits_hit || ra.forced_flushes > 0) {
         w.push_back(
@@ -594,9 +601,10 @@ void Page::top_flows() {
 void Page::talkers_services() {
     out("<section aria-labelledby=\"h-tk\"><h2 id=\"h-tk\">Talkers and services</h2>"
         "<div class=\"grid2\"><div class=\"scroll\"><table><caption class=\"note\" "
-        "style=\"text-align:left\">Top addresses by bytes</caption><thead><tr><th scope=\"col\">"
+        "style=\"text-align:left\">Top addresses by bytes{}</caption><thead><tr><th scope=\"col\">"
         "Address</th><th scope=\"col\" class=\"n\">Sent</th><th scope=\"col\" class=\"n\">"
-        "Received</th><th scope=\"col\" class=\"n\">Flows</th></tr></thead><tbody>");
+        "Received</th><th scope=\"col\" class=\"n\">Flows</th></tr></thead><tbody>",
+        sr_.talkers_capped ? " (address table full: later addresses not tracked)" : "");
     for (const auto& t : top_talkers(sr_, 20)) {
         out("<tr><td class=\"mono\">{}</td><td class=\"n\">{}</td><td class=\"n\">{}</td>"
             "<td class=\"n\">{}</td></tr>",

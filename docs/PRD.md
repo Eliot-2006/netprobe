@@ -136,6 +136,12 @@ tests and this list agree.
 | FR-FLOW-7 | evict the LRU open flow | lingering closed flows are reclaimed first (natural close reason), then the LRU open flow (`evicted`); either sets `limits_hit` | closed flows lose only their linger window |
 | D7 | gaps declared lazily | ACKed holes released once min(1 MiB, buffer/2) is buffered behind them | measured: forced flushes 29 → 0 on a 0.1%-loss capture |
 | FR-TCP-8 | FIN records `fin_offset` | a FIN behind already delivered data is ignored | a stale FIN would otherwise discard all later data |
+| FR-DEC-3/4 | IP length beyond captured bytes = snaplen truncation | only when the frame was cut by the capture (`orig_len` covers the IP length); otherwise `malformed.bad_total_length` | real capture (tcpdump `kday4.pcap`): a lying header fed a phantom segment into reassembly |
+| FR-FLOW-5 | reuse requires a different ISN | after a RST any new SYN starts a new flow; after FIN the ISN must differ | real capture (tcpreplay `bigFlows.pcap`): connection-refused retries reuse the ISN |
+| FR-TCP-9 | data after RST dropped | RST payload itself is also not stream data (counted as `data_after_rst`) | RFC 9293; tcpdump `tcp_rst_data.pcap` |
+| FR-TCP-3 | before-origin offsets are out of window | they are old data (retransmissions of pre-capture bytes); straddling segments keep their new bytes | real capture (tcpreplay `smallFlows.pcap`) |
+| 6.10 export | files named c2s/s2c while live, append mode | written under the key direction and renamed at finalize; a non-empty export directory is refused (exit 4) | independent audit (wrong direction after re-orientation; doubled streams on re-run) |
+| FR-STAT-3 | exact talkers | exact up to the shard's flow limit, then `talkers_capped` | bounded memory (G3); independent audit |
 | Integrity | `snaplen_truncated` | chosen when cumulative snaplen-missing bytes cover the gap bytes; may misclassify if snaplen holes were later refilled and other loss occurred | known limitation |
 
 ## 3. Protocol support matrix

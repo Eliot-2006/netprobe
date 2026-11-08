@@ -336,6 +336,7 @@
       "flows": 2
     }
   ],
+  "talkers_capped": false,
   "services": [
     {
       "proto": "tcp",

@@ -7,6 +7,13 @@
 
 #include <gtest/gtest.h>
 
+#include <unistd.h>
+
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <string>
+
 using namespace netprobe;
 using namespace netprobe::test;
 
@@ -274,4 +281,69 @@ TEST(Analyzer, SynAfterStrayPacketsFixesOrientation) {
     EXPECT_TRUE(top[0].orientation_handshake);
     EXPECT_EQ(top[0].client.port, 1000);
     EXPECT_EQ(top[0].c2s.packets, 1u);
+}
+
+TEST(Analyzer, RstPayloadIsNotStreamData) {
+    Feeder f;
+    f.tcp(S, 80, C, 1000, RST | ACK, 700, 500, counting_bytes(58), kSec);
+    auto r = f.a.finish();
+    EXPECT_EQ(r.reassembly.delivered_bytes, 0u);
+    EXPECT_EQ(r.reassembly.data_after_rst, 1u);
+    EXPECT_EQ(r.flows.tcp_close[static_cast<int>(CloseReason::rst)], 1u);
+}
+
+// Real-world regression (tcpreplay bigFlows.pcap): SYN, RST (refused), then the same SYN again.
+// After a reset every new SYN is a new connection attempt, even with the same ISN.
+TEST(Analyzer, SynAfterRstIsNewAttemptEvenWithSameIsn) {
+    Feeder f;
+    for (int attempt = 0; attempt < 3; ++attempt) {
+        f.tcp(C, 59030, S, 33593, SYN, 2964716962u, 0, {}, kSec + attempt * kSec / 2);
+        f.tcp(S, 33593, C, 59030, RST | ACK, 0, 2964716963u, {}, kSec + attempt * kSec / 2 + 1);
+    }
+    auto r = f.a.finish();
+    EXPECT_EQ(r.flows.tcp_total, 3u);
+    EXPECT_EQ(r.flows.tcp_close[static_cast<int>(CloseReason::reused)], 2u);
+}
+
+// Independent audit: the per-address talker table is bounded by the flow limit.
+TEST(Analyzer, TalkerTableIsBoundedByFlowLimit) {
+    AnalyzerConfig cfg;
+    cfg.max_flows = 100;
+    Feeder f(cfg);
+    for (std::uint32_t i = 0; i < 1000; ++i) { // 1000 distinct spoofed sources
+        const Addr4 src{11, static_cast<std::uint8_t>(i >> 16), static_cast<std::uint8_t>(i >> 8),
+                        static_cast<std::uint8_t>(i)};
+        f.udp(src, 4000, S, 53, kSec + i);
+    }
+    auto r = f.a.finish();
+    EXPECT_LE(r.talkers.size(), 100u);
+    EXPECT_TRUE(r.talkers_capped);
+    EXPECT_EQ(r.flows.udp_total, 1000u);
+}
+
+// Independent audit M1: stray server data before the handshake re-orients the flow when the
+// client's SYN arrives; exported files must follow the final orientation.
+TEST(Analyzer, ExportFilesFollowFinalOrientation) {
+    const auto dir =
+        std::filesystem::temp_directory_path() / ("netprobe_export_" + std::to_string(::getpid()));
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    AnalyzerConfig cfg;
+    cfg.export_dir = dir;
+    {
+        Feeder f(cfg);
+        f.tcp(S, 80, C, 1000, PSH | ACK, 500, 100, bytes_of("SERVER-EARLY"), kSec);
+        f.tcp(C, 1000, S, 80, SYN, 99, 0, {}, kSec + 1);
+        f.tcp(C, 1000, S, 80, PSH | ACK, 100, 512, bytes_of("CLIENT-DATA"), kSec + 2);
+        f.tcp(S, 80, C, 1000, PSH | ACK, 512, 111, bytes_of("SERVER-LATE"), kSec + 3);
+        f.a.finish();
+    }
+    auto slurp = [&](const char* name) {
+        std::ifstream in(dir / name, std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(in), {});
+    };
+    EXPECT_EQ(slurp("0_c2s.bin"), "CLIENT-DATA");
+    EXPECT_EQ(slurp("0_s2c.bin"), "SERVER-EARLYSERVER-LATE");
+    EXPECT_FALSE(std::filesystem::exists(dir / "0_lo.part"));
+    std::filesystem::remove_all(dir);
 }

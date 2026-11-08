@@ -143,5 +143,6 @@
     "limits_hit": false
   },
   "talkers": [],
+  "talkers_capped": false,
   "services": []
 }

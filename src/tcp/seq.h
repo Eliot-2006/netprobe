@@ -28,6 +28,19 @@ public:
         return reference + distance;
     }
 
+    // Signed variant: offsets before the origin (data sent before a mid-stream capture began)
+    // are returned as negative values instead of being rejected. nullopt only outside +/-2^30.
+    std::optional<std::int64_t> to_signed_offset(std::uint32_t seq,
+                                                 std::uint64_t reference) const noexcept {
+        const auto delta = static_cast<std::int64_t>(
+            seq_diff(seq, origin_ + static_cast<std::uint32_t>(reference)));
+        constexpr std::int64_t window = 1LL << 30;
+        if (delta < -window || delta > window ||
+            reference > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max() / 2))
+            return std::nullopt;
+        return static_cast<std::int64_t>(reference) + delta;
+    }
+
 private:
     std::uint32_t origin_ = 0;
 };

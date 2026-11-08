@@ -307,6 +307,7 @@ std::string render_json(const Report& r) {
         w.end_object();
     }
     w.end_array();
+    w.field("talkers_capped", sr.talkers_capped);
     w.key("services");
     w.begin_array();
     for (const auto& s : top_services(sr, 20)) {

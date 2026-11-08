@@ -41,16 +41,20 @@ listed exactly underneath.*
   - A deliberately naive reference reassembler checked on randomized segment schedules.
   - Per-packet, per-conversation and per-stream comparison with `tshark`.
   - Identical output across worker counts.
+  - 787 public real-world captures checked under ASan and against `tshark`, with the four bugs
+    found fixed: [`docs/validation.md`](docs/validation.md).
 - **Hardened and measured.**
   - CI runs ASan+UBSan and TSan with GCC 13 and Clang 18.
   - Three libFuzzer targets, 30 minutes each: 1.87 billion executions, 0 findings.
   - Every benchmark number in [`docs/results.md`](docs/results.md) comes with the command that
-    produced it, including the one target that was missed.
+    produced it.
 
 ## Results
 
-Linux (Ubuntu 24.04 container on an Apple M3 Pro, arm64), GCC 13 `-O2`, page cache warm, 1 GiB
-synthetic captures, median of 5. Full methodology in [`docs/results.md`](docs/results.md).
+Linux (Ubuntu 24.04 container on an Apple M3 Pro, arm64; no x86-64 machine was available), GCC 13
+`-O2`, page cache warm, 1 GiB synthetic captures, median of 5. Throughput is from a quiet-host run;
+the final code was re-checked at 1 GiB and 2 GiB with no slowdown. Full methodology in
+[`docs/results.md`](docs/results.md).
 
 | Measure | Result |
 |---|---|
@@ -58,8 +62,8 @@ synthetic captures, median of 5. Full methodology in [`docs/results.md`](docs/re
 | End to end, single-threaded | 3.73 M packets/s (1.77 GiB/s) |
 | End to end, 4 workers | 7.69 M packets/s (2.06×) |
 | TCP reassembly with 10 % reordering | 31.4 GiB/s |
-| Peak memory, 1 GiB capture | 33–78 MiB |
-| Memory per live flow | ≈ 790 B (target was 512 B: not met, cause in results.md) |
+| Peak memory, bulk-transfer capture (1 GiB and 2 GiB) | 33–78 MiB |
+| Memory per live flow | ≈ 490 B (target 512 B) |
 
 Scaling stops near 2× because the single reader thread is about 47 % of the per-packet cost, which
 is the Amdahl ceiling the measurements match. A single elephant flow cannot be split across
@@ -161,7 +165,7 @@ cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan   # Th
 cmake --preset fuzz && cmake --build --preset fuzz                          # build/fuzz/fuzz_*
 ```
 
-The suite covers 148 tests: GoogleTest unit, property and pipeline tests, plus Python integration
+The suite covers 156 tests: GoogleTest unit, property and pipeline tests, plus Python integration
 tests run by CTest (ground truth, golden files, determinism, HTML safety). CI also runs a fuzz smoke
 test, the `tshark` differential and clang-format. The verification strategy is described in
 [`docs/design.md`](docs/design.md#9-verification-strategy).
@@ -174,10 +178,9 @@ test, the `tshark` differential and clang-format. The verification strategy is d
   guesses from port numbers. TCP/UDP checksums are not verified.
 - VLAN IDs are not part of the flow key. Determinism across worker counts assumes non-decreasing
   capture timestamps and no memory limit being hit (the report says when one was).
-- Memory per flow is above the 512 B target, and scaling is capped by the reader thread (see
-  Results).
-- Not yet measured: 2 GiB captures, x86-64 hardware, real-world traffic. The sample captures are
-  synthetic.
+- Scaling is capped by the reader thread (see Results).
+- Not measured on x86-64 hardware. The bundled sample captures are synthetic; real-world captures
+  are fetched by `scripts/fetch_realworld.sh`, not committed.
 
 ## Platform notes
 
@@ -201,5 +204,5 @@ test, the `tshark` differential and clang-format. The verification strategy is d
 | `tests/` | `unit/` GoogleTest · `integration/` Python via CTest · `fixtures/` Scapy captures and ground truth · `golden/` · `reference/` naive reassembler · `differential/` tshark · `fuzz/` |
 | `bench/`, `tools/` | Google Benchmark suites, end-to-end harness, `synth_pcap` dataset generator, Docker image |
 | `samples/`, `scripts/` | three synthetic demo captures, `demo.sh` |
-| `docs/` | [`PRD.md`](docs/PRD.md) requirements · [`design.md`](docs/design.md) architecture · [`results.md`](docs/results.md) benchmarks |
+| `docs/` | [`PRD.md`](docs/PRD.md) requirements · [`design.md`](docs/design.md) architecture · [`results.md`](docs/results.md) benchmarks · [`validation.md`](docs/validation.md) real-world captures |
 | `DESIGN.md` | visual design system of the HTML report |

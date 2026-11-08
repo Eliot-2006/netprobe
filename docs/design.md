@@ -89,24 +89,30 @@ goes negative.
 `MappedFile::release_before(offset)` rounds `offset` down to a page boundary and releases
 everything before it:
 
-- Release builds: `madvise(MADV_DONTNEED)`.
+- All builds: `madvise(MADV_DONTNEED)`, which drops the pages from RSS.
 - Builds with `NETPROBE_DEBUG_GUARDS` (defined by `NETPROBE_HARDENING`, so the `dev`, `asan` and
-  `fuzz` presets): `mprotect(PROT_NONE)` on the same range. A retained span into released bytes
-  then faults on first access instead of silently reading stale data.
+  `fuzz` presets) additionally `mprotect(PROT_NONE)` the same range. A retained span into released
+  bytes then faults on first access instead of silently reading the file again. This guard caught
+  a real bug (below).
 
 Single-threaded mode releases once at least 64 MiB has been consumed since the last release
-(`run_analyze`). The pipeline calls `release()` every 64 submitted batches and once more after the
-join. The pipeline frontier is the minimum of: the reader position, each worker's
+(`run_analyze`). The pipeline calls `release()` every 64 submitted batches, every 64 MiB of reader
+progress, and once more after the join. The reader-progress trigger exists because only TCP/UDP
+packets enter batches: a capture dominated by ARP, ICMP or malformed frames submitted almost no
+batches and kept the whole file resident (290 MB capture: 294 MiB RSS with workers vs 68 MiB
+inline; now 133 MiB, flat as the file grows). At that trigger partial batches are submitted first,
+so an idle shard cannot pin old pages, and the check runs before the current record's end is added
+to the frontier: the first version of this change released the page holding the record about to
+be decoded, which the `PROT_NONE` guard turned into a SIGBUS in the audit
+(`tests/integration/test_release_frontier.py` covers the RSS bound on Linux). The pipeline frontier is the minimum of: the reader position, each worker's
 `completed_offset` while that worker still has submitted-but-unfinished batches, and the file offset
 of the first packet in any partially filled batch. A worker publishes `completed_offset`
 (release store) only after `process()` has returned for the whole batch, which is exactly the O1
 boundary. Tests: `Pipeline.ReleaseFrontierRoundsDownAndGuardsCompletedPages` and the determinism
 test, which uses a capture larger than 64 MiB so both frontiers run.
 
-Caveat from commit `1e8776d`: on macOS `MADV_DONTNEED` did not bound RSS in the author's check, so
-the bounded-memory property is a Linux property. The memory figures that commit reports are not in
-`docs/results.md` and are not reproduced here. PERF-M1 and PERF-M2 are recorded in
-`docs/results.md` as not met and not measured respectively, against the pre-frontier baseline.
+Caveat: on macOS `MADV_DONTNEED` does not reduce RSS, so the bounded-memory property is a Linux
+property. Linux measurements are in `docs/results.md`.
 
 ## 4. Decoding strategy
 
@@ -118,9 +124,13 @@ the bounded-memory property is a Linux property. The memory figures that commit 
   `ok | truncated | malformed | unsupported`. There are no exceptions, logging or heap allocation on
   the decode path; a unit test counts allocations around the reader. Malformed packets are counted
   by `(kind, layer, reason)` in `ReaderStats` and never abort.
-- **Snaplen is not malformed.** IP total length greater than captured bytes sets `l3_truncated`
-  and keeps the captured prefix as `payload`; `payload_logical_len` keeps the on-wire length so the
-  reassembler can account for `snaplen_missing_bytes`.
+- **Snaplen is not malformed, a lying header is.** IP total length greater than the captured
+  bytes sets `l3_truncated` and keeps the captured prefix as `payload`; `payload_logical_len` keeps
+  the on-wire length so the reassembler can account for `snaplen_missing_bytes`. That only holds
+  when the bytes existed on the wire: if the IP length exceeds the frame's original length
+  (`orig_len`, not just `incl_len`), the packet is `malformed.bad_total_length` (found on tcpdump's
+  `kday4.pcap`, where a 66-byte frame claimed 820 bytes and fed a phantom 768-byte segment into
+  reassembly).
 - **Specifics.** VLAN TPIDs `0x8100`, `0x88A8`, `0x9100`, at most two tags (`vlan_depth`); EtherType
   below `0x0600` is `llc`. IPv4 validates version, IHL, total length; the header checksum is
   computed and recorded (`ipv4_checksum_ok`) but not used to reject. A zero IP length (TSO) uses
@@ -156,8 +166,16 @@ or reassembly.
 
 **Port reuse.** A flow that is already closing (both FINs, or RST) and receives a pure SYN whose
 ISN differs from the one recorded for that direction, or a SYN in a direction that has not sent
-one, is finalized with reason `reused` and a new flow starts. A retransmitted SYN with the same ISN
-does not split the flow. A packet arriving after the applicable timeout also splits the flow
+one, is finalized with reason `reused` and a new flow starts. After a FIN close a SYN with the same
+ISN is treated as a retransmission and does not split the flow; after a RST any new SYN is a new
+connection attempt, even with the same ISN (connection-refused retries in tcpreplay's
+`bigFlows.pcap`, which Wireshark also counts as separate streams).
+
+**RST payload.** Data carried by a RST segment is diagnostic text that is never delivered to the
+application (RFC 9293 3.5.3); it is counted as `data_after_rst`, not reassembled.
+
+**Talkers.** The per-address table is exact but bounded by the shard's flow limit; beyond that new
+addresses are not tracked and the report sets `talkers_capped`. A packet arriving after the applicable timeout also splits the flow
 (`idle_timeout`, or the natural close reason for a closing flow).
 
 **Expiry.** Two intrusive doubly linked LRU lists per shard, `open_` and `closed_`, each ordered by
@@ -185,10 +203,19 @@ order, so merging per-shard heaps yields exactly the global top-K.
 
 **64-bit offsets.** `SeqUnwrapper::to_offset(seq, reference)` computes a signed 32-bit difference
 against `origin + reference` (well defined modular arithmetic in C++20) and adds it to the 64-bit
-`reference`, which is the delivered offset. Deltas beyond +/-2^30 or below zero offset are rejected
-and counted as `out_of_window_segments`. All later logic uses monotonic `uint64_t` offsets, so
-wraparound exists in exactly one function. The origin is ISN+1 after a SYN, or the first observed
-sequence number for mid-stream pickup.
+`reference`, which is the delivered offset. Deltas beyond +/-2^30 are rejected and counted as
+`out_of_window_segments`. Offsets that fall before the origin are old data: in a mid-stream pickup
+they are retransmissions of bytes sent before the capture started (41 such segments in tcpreplay's
+`smallFlows.pcap` were previously misreported as out of window). They count as retransmitted, and a
+segment straddling the origin is trimmed so its new bytes are kept. All later logic uses monotonic
+`uint64_t` offsets, so wraparound exists in exactly one place (`SeqUnwrapper`). The origin is ISN+1
+after a SYN, or the first observed sequence number for mid-stream pickup.
+
+**Compact state.** Most streams are in order and clean, so `StreamReassembler` keeps only the hot
+fields inline (offsets, delivered bytes, FIN, completeness) and allocates the out-of-order map and
+the anomaly counters plus gap list on first use; the map is freed again when it drains. This took
+`StreamReassembler` from 256 to 104 bytes and `Analyzer::Flow` from 664 to 360 bytes (GCC 13,
+libstdc++), meeting the per-flow memory target (results A.4).
 
 **Out-of-order buffer.** `std::map<uint64_t, Segment>` keyed by start offset, holding disjoint
 intervals, all beyond `delivered_`. `check_invariants()` asserts disjointness.
@@ -401,6 +428,23 @@ build and test run. CI does not gate on performance.
   in PRD section 2.3.
 - **Fuzz instrumentation (`8d4b4bc`).** See section 9.
 
+- **Real-world validation round.** Running 787 public captures (tcpdump's test suite and
+  tcpreplay's smallFlows/bigFlows) against tshark found four NetProbe bugs, each fixed with a
+  regression test: IP length beyond the wire length treated as snaplen truncation, RST payload
+  delivered as stream data, pre-origin retransmissions counted as out-of-window (and straddling
+  bytes dropped), and same-ISN SYNs after a RST merged into the refused flow. It also found
+  differential-script errors and tshark limits; see `docs/validation.md`.
+- **Final audit round.** A second independent review (a Claude subagent; the Codex audit was
+  stopped by OpenAI's cybersecurity content filter and was not worked around) found and verified
+  the pipeline release stall (high), a use-after-release introduced by its first fix (high, caught
+  by the `PROT_NONE` guard), export files written to the wrong direction after a re-orientation,
+  repeated exports appending into the same directory (now refused), the unbounded talker table,
+  `--html -` mixing the text summary into stdout, corrupt captures reporting 0 skipped bytes,
+  `on_fin` allocating under `noexcept`, and per-shard `max_flows` rounding to zero. All fixed with
+  tests except the two items listed as limitations below.
+- **Per-flow memory (PERF-M2).** Out-of-line anomaly counters and out-of-order map: 664 → 360 bytes
+  per `Analyzer::Flow`, ≈ 790 → ≈ 490 bytes per live flow measured.
+
 ## 11. Known limitations
 
 - Classic PCAP with Ethernet link type only. No pcapng, no raw-IP or Linux cooked captures.
@@ -411,14 +455,23 @@ build and test run. CI does not gate on performance.
 - Conflicting-overlap detection only sees earlier copies that are still buffered.
 - Orientation of flows without a SYN is a guess; midstream streams start at offset 0 at their
   first observed sequence number.
+- Data captured *before* its own SYN (capture reordering) is treated as a mid-stream start; the
+  real first bytes then count as old data and are not delivered. Fixing this would need buffering
+  until a SYN is ruled out; it was judged too rare to justify (independent audit H2).
+- If a FIN is not captured but the peer's ACK of it is, the trailing gap includes one phantom byte
+  (the FIN's sequence number), so integrity reads `gaps` (audit L1).
+- Capture-time expiry is driven by the largest timestamp seen, so a single far-future timestamp
+  (a broken clock, as in tcpdump's `kday*.pcap`) idle-expires every open flow.
+- IPv4 source-route options: flows are keyed on the header's destination (the next hop), while
+  Wireshark reports the route's final destination.
 - VLAN IDs are not in the flow key.
 - Timestamp-order assumptions: expiry and the determinism guarantee assume non-decreasing
   capture time.
 - A single flow cannot be parallelized, and the reader thread is serial.
-- Memory release: bounded RSS needs working `MADV_DONTNEED`; it did not bound RSS on macOS. On
-  Linux, D2 (1 GiB) peaks at 33–78 MiB. Per-flow memory is ≈ 790 B, above the 512 B target.
-- Performance data is from an arm64 Linux container and macOS on the same laptop, 1 GiB datasets,
-  no real-world capture (R1); x86-64 numbers do not exist.
+- Memory release: bounded RSS needs working `MADV_DONTNEED`; it does not bound RSS on macOS.
+- Performance data is from an arm64 Linux container and macOS on the same laptop (1 GiB and
+  2 GiB synthetic datasets); x86-64 numbers do not exist. Real-world captures were used for
+  correctness (docs/validation.md), not timed as R1.
 - Memory-limit behavior is deterministic per worker count but not across worker counts.
 
 ## 12. Open questions
@@ -426,6 +479,4 @@ build and test run. CI does not gate on performance.
 - Reader-thread ceiling: measured scaling (docs/results.md A.2) stops at about 2× because the
   reader is ≈ 47 % of per-packet cost. Moving decode or `ReaderStats` into the workers would raise
   the ceiling; it needs a profile on the reference machine class before changing the design.
-- Per-flow memory is ≈ 790 B (upper bound), above the 512 B target; see results A.4 for the
-  upgrade path.
-- Not run: 2 GiB datasets, an x86-64 reference machine, and a real-world capture (R1).
+- Not yet measured on an x86-64 machine; see results.md for what was measured where.

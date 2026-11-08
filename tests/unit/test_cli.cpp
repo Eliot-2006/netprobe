@@ -50,6 +50,8 @@ TEST(Cli, JsonToStdoutImpliesQuiet) {
     auto r = parse({"analyze", "x", "-o", "-"});
     ASSERT_TRUE(r.error.empty());
     EXPECT_TRUE(r.analyze.quiet);
+    // HTML on stdout must not be followed by the text summary (independent audit L3).
+    EXPECT_TRUE(parse({"analyze", "x", "--html", "-"}).analyze.quiet);
 }
 
 TEST(Cli, Dump) {

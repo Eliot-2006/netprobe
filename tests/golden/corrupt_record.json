@@ -22,7 +22,7 @@
     "link_type": 1,
     "link_type_name": "EN10MB",
     "status": "corrupt",
-    "truncated_tail_bytes": 0,
+    "truncated_tail_bytes": 156,
     "records": 2,
     "captured_bytes": 128,
     "original_bytes": 128,
@@ -197,6 +197,7 @@
       "flows": 1
     }
   ],
+  "talkers_capped": false,
   "services": [
     {
       "proto": "tcp",

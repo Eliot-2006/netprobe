@@ -77,8 +77,11 @@ std::string render_text_summary(const Report& r, const std::vector<std::string>&
         }
     }
     if (cap.status != CaptureStatus::complete) {
-        line(std::format("  warning: capture is {} ({} trailing bytes ignored)",
-                         to_string(cap.status), cap.truncated_tail_bytes));
+        line(std::format("  warning: capture is {} ({} bytes {})", to_string(cap.status),
+                         cap.truncated_tail_bytes,
+                         cap.status == CaptureStatus::corrupt
+                             ? "skipped after a corrupt record header"
+                             : "of incomplete trailing record ignored"));
     }
     if (sr.limits_hit || ra.forced_flushes > 0) {
         line(std::format("  warning: memory limits hit ({} forced flushes, {} evicted flows); "

@@ -243,7 +243,8 @@ CliResult parse_cli(std::span<const std::string_view> args) {
     if (!have_input) {
         r.error = "missing capture file";
     }
-    if (r.command == Command::analyze && r.analyze.json_path == "-") {
+    if (r.command == Command::analyze &&
+        (r.analyze.json_path == "-" || r.analyze.html_path == "-")) {
         r.analyze.quiet = true;
     }
     return r;

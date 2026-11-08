@@ -1,8 +1,13 @@
 # NetProbe results
 
 Every number below comes from a command recorded in this file or in `bench/run_linux_container.sh`.
-Disk I/O is excluded everywhere (page cache warm). Section A is the current, final code on Linux;
-section B is the earlier macOS single-threaded baseline (M8), kept for history.
+Disk I/O is excluded everywhere (page cache warm). Section A is Linux: A.2 is the quiet-machine
+scaling run at commit `9b23f83`, A.2b re-measures the final code at 1 GiB and 2 GiB. Section B is the
+earlier macOS single-threaded baseline (M8), kept for history.
+
+**No x86-64 hardware was available.** The only machine is an Apple M3 Pro (arm64). Docker can run
+x86-64 images only through emulation, which would measure the emulator, so every Linux number here
+is arm64 and no x86-64 number exists.
 
 ## A. Final code on Linux (container), single- and multi-threaded
 
@@ -17,7 +22,7 @@ section B is the earlier macOS single-threaded baseline (M8), kept for history.
 | Command | `docker run --rm -v "$PWD":/src -w /src -e RUNS=5 netprobe-dev:24.04 bench/run_linux_container.sh out/bench-linux` |
 | Datasets | D1/D2/D3 regenerated in the container by `synth_pcap --profile dN --size 1G` (seed 1; SHA-256 identical to section B) |
 | Method | per worker count: one warm-up run, then 5 measured runs; median (min–max). Micro-benchmarks: 5 repetitions, median; CV ≤ 5 % except `BM_MutexQueue/1` (9.2 %) |
-| Caveats | arm64 under a VM, not the PRD's x86-64 reference machine; datasets 1 GiB, not 2 GiB; no real-world capture (R1); no core pinning. Nothing else ran during the measurement. |
+| Caveats | arm64 under a VM, not the PRD's x86-64 reference machine; no core pinning. Nothing else ran during this measurement (A.2b was not as lucky). |
 
 ### A.2 End-to-end throughput by worker count
 
@@ -51,6 +56,58 @@ workers only add coordination cost. `--workers 1` is faster than inline because 
 with analysis. The next step would be moving decode or `ReaderStats` off the reader thread; no
 change was made without measurements to justify it.
 
+### A.2b Final code, 1 GiB and 2 GiB
+
+Same container and compiler, final working tree (after the validation, audit and PERF-M2 changes).
+Commands: `docker run --rm -v "$PWD":/src -w /src -e RUNS=5 netprobe-dev:24.04
+bench/run_linux_container.sh out/bench-linux-final` and the same with `-e SIZE=2G` into
+`out/bench-linux-2g`. The script generates, measures and deletes one dataset at a time.
+
+**The host was not quiet:** macOS system daemons (Spotlight indexing, FileProvider, mobileassetd)
+used about 3.5 cores and the load average was 5–7. The same binary's `BM_Decode/d3` measured 26.5
+and 31.9 M pkt/s in two consecutive runs (38.6 in A.3), so treat absolute numbers below as
+pessimistic and noisy, and A.2 as the reference for scaling.
+
+2 GiB datasets (seed 1): D1 2,147,484,325 B, 6,157,395 packets, 563,932 flows; D2 2,147,484,480 B,
+2,058,946 packets, 16 flows; D3 2,147,483,914 B, 4,085,731 packets, 89,235 flows
+(`out/bench-linux-2g/datasets.txt`, with SHA-256).
+
+| Dataset | workers | 1 GiB elapsed ms | 1 GiB Mpkt/s | 1 GiB RSS MiB | 2 GiB elapsed ms | 2 GiB Mpkt/s | 2 GiB RSS MiB |
+|---|---|---|---|---|---|---|---|
+| D3 | 0 | 580 (525–799) | 3.52 | 244.0 | 1384 (1328–1598) | 2.95 | 264.2 |
+| D3 | 1 | 507 | 4.03 | 187.0 | 880 | 4.64 | 208.7 |
+| D3 | 2 | 376 | 5.43 | 189.5 | 608 (474–815) | 6.72 | 211.0 |
+| D3 | 4 | 300 | 6.80 | 191.0 | 525 | 7.78 | 216.1 |
+| D3 | 8 | 336 | 6.08 | 200.5 | 542 | 7.54 | 225.6 |
+| D1 | 0 | 920 (880–1012) | 3.35 | 155.2 | 1834 (1455–3072) | 3.36 | 175.0 |
+| D1 | 1 | 846 | 3.64 | 108.7 | 1505 | 4.09 | 149.7 |
+| D1 | 2 | 569 | 5.41 | 109.5 | 818 | 7.53 | 150.4 |
+| D1 | 4 | 498 (418–604) | 6.19 | 111.1 | 721 | 8.54 | 151.8 |
+| D1 | 8 | 419 | 7.34 | 115.4 | 770 | 8.00 | 155.0 |
+| D2 | 0 | 210 | 4.91 | 78.3 | 428 | 4.82 | 78.4 |
+| D2 | 1 | 250 | 4.12 | 32.9 | 406 | 5.07 | 33.7 |
+| D2 | 2 | 191 | 5.40 | 36.2 | 326 | 6.32 | 35.1 |
+| D2 | 4 | 185 | 5.56 | 40.3 | 338 | 6.10 | 39.4 |
+| D2 | 8 | 193 | 5.33 | 47.2 | 331 | 6.22 | 47.1 |
+
+Median of 5 (min–max shown where the spread exceeds 15 %). Full output in `e2e_*.txt`.
+
+- **Memory does not grow with file size.** Doubling the file adds 0–20 MiB inline and 1–40 MiB
+  with workers (more live flows and talkers), and D2 stays at 78 MiB inline and 33–47 MiB with
+  workers at 2 GiB. PERF-M1 holds at the PRD's size.
+- **Regression check under the same noise.** Because absolute numbers moved with host load, the
+  committed code (`f71c2bd`) and the final tree were built side by side and run interleaved, 7 runs
+  each, on the 1 GiB sets (`out/bench-linux-final/ab.txt`). Median ms (RSS MiB):
+
+  | | before | after |
+  |---|---|---|
+  | D3 `-j 0` | 509.5 (253.7) | 499.6 (244.0) |
+  | D3 `-j 4` | 260.3 (200.3) | 259.5 (189.8) |
+  | D1 `-j 0` | 1181.5 (209.7) | 952.7 (155.2) |
+  | D1 `-j 4` | 592.0 (165.6) | 520.5 (111.1) |
+
+  No slowdown; D1 is faster and 54 MiB smaller because flow state shrank (A.4).
+
 ### A.3 Micro-benchmarks (`out/bench-linux/micro.json`)
 
 | Benchmark | Median |
@@ -69,12 +126,20 @@ change was made without measurements to justify it.
 
 - **Release frontier (PERF-M1):** D2 1 GiB peak RSS is 78 MiB inline and 33–47 MiB with workers,
   versus about 1.07 GiB before the frontier existed (section B). Measured at 1 GiB, not 2 GiB.
-- **Per-flow memory (PERF-M2):** D1 at 64 MiB vs 1 GiB with `--idle-timeout 86400` gives peak live
-  flows 20,717 vs 189,491 and peak RSS 82.3 vs 209.7 MiB, so ≈ 790 B per live flow. This is an upper
-  bound (it also includes per-address talker entries, which grow with flows here). The 512 B target
-  is **not met**: two `StreamReassembler`s are 2 × 232 B on their own. Upgrade path: allocate
-  reassembly state only for TCP flows and only after the first payload byte, and keep rarely
-  non-zero counters out of line.
+- **Per-flow memory (PERF-M2), final code:** D1 at 64 MiB vs 1 GiB with `--idle-timeout 86400`
+  gives peak live flows 20,717 vs 189,491 and peak RSS 76.2 vs 155.2 MiB (3 runs each, identical
+  to within 0.1 MiB; `out/bench-linux-final/per_flow.txt`), so **≈ 491 B per live flow: target
+  met.** This is an upper bound (it includes talker entries, which also grow with flows). Before
+  this round the same measurement gave ≈ 790 B (82.3 vs 209.7 MiB). Change: `StreamReassembler`
+  keeps its out-of-order map behind a pointer allocated on first out-of-order segment, and moves
+  rarely non-zero anomaly counters into a block allocated on first use; `sizeof(Analyzer::Flow)`
+  went from 664 to 360 bytes. Correctness: all 156 tests, goldens unchanged except the new
+  `talkers_capped` field, and the real-world differential (docs/validation.md).
+- **Pipeline release stall (fixed in the final audit):** packets that never reach a worker (ARP,
+  ICMP, malformed) used to hold back the release frontier. On the regression test's 217 MiB
+  mostly-ARP capture, `-j 2` peaked at 222 MiB RSS (the whole file resident) before the fix and
+  133 MiB after (68 MiB inline). Regression test:
+  `tests/integration/test_release_frontier.py` (Linux).
 - **Reassembly buffering (D7 revision):** on a 200 MiB D2-profile capture, forced flushes went from
   29 to 0 and peak buffered bytes from 39.7 MB to 8.5 MB, with identical gaps (same file,
   before/after binaries; see commit `609e42d`).
@@ -86,12 +151,12 @@ change was made without measurements to justify it.
 | PERF-1 | decode D3 ≥ 15 M pkt/s | 38.6 M pkt/s | met |
 | PERF-2 | in-order reassembly ≥ 8 GiB/s | 331 GiB/s (NullSink) | met, bookkeeping rate |
 | PERF-3 | 10 % reorder ≥ 1.5 GiB/s | 31.4 GiB/s | met |
-| PERF-4 | e2e D3 w0 ≥ 2.5 Mpkt/s and ≥ 1.5 GiB/s | 3.73 Mpkt/s, 1.77 GiB/s | met |
-| PERF-5 | e2e D1 w0 ≥ 1.5 Mpkt/s | 3.84 Mpkt/s (284k flows, not 1 Mi) | met |
-| PERF-6 | D3 w4 / w0 ≥ 2.0× | 2.06× (7.69 / 3.73) | met, at the Amdahl ceiling |
+| PERF-4 | e2e D3 w0 ≥ 2.5 Mpkt/s and ≥ 1.5 GiB/s | 3.73 Mpkt/s, 1.77 GiB/s (A.2); 2 GiB under load: 2.95 Mpkt/s, 1.40 GiB/s | met on a quiet host; GiB/s missed under load at 2 GiB |
+| PERF-5 | e2e D1 w0 ≥ 1.5 Mpkt/s | 3.84 Mpkt/s (284k flows); 3.36 Mpkt/s at 2 GiB (564k flows) | met |
+| PERF-6 | D3 w4 / w0 ≥ 2.0× | 2.06× (A.2); 1.93× (1 GiB) and 2.64× (2 GiB) on the loaded host | met on a quiet host, at the Amdahl ceiling |
 | PERF-7 | w1 ≤ 20 % slower than w0 | 27 % faster on D3 | met |
-| PERF-M1 | D2 peak RSS ≤ 128 MiB | 33–78 MiB (1 GiB file) | met at 1 GiB; 2 GiB not run |
-| PERF-M2 | ≤ 512 B per idle flow | ≈ 790 B upper bound | **not met** (see A.4) |
+| PERF-M1 | D2 peak RSS ≤ 128 MiB | 33–78 MiB at 1 GiB, 34–78 MiB at 2 GiB | met |
+| PERF-M2 | ≤ 512 B per idle flow | ≈ 491 B upper bound | met (was ≈ 790 B, see A.4) |
 | PERF-M3 | budget ≤ limit + one segment | enforced and tested | met (tests) |
 
 ### A.6 Fuzzing (30 minutes per target, Linux, Clang 18, ASan + UBSan, instrumented library)

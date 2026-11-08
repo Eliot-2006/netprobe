@@ -122,6 +122,7 @@ template <ByteOrder Order> bool PcapReader::next_impl(PacketRecord& out) noexcep
     const std::uint32_t orig = load32<Order>(h + 12);
     if (incl > max_record_len) {
         status_ = CaptureStatus::corrupt; // PCAP cannot resynchronize
+        tail_bytes_ = remaining;          // everything from the corrupt record header on is skipped
         done_ = true;
         return false;
     }

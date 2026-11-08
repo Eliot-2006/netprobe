@@ -14,10 +14,13 @@ struct Step {
 
 // Ethernet II header plus up to 2 VLAN tags. rest = L3 bytes.
 Step parse_ethernet(Bytes frame, DecodedPacket& p) noexcept;
+// `snaplen_cut` = bytes the capture dropped from this frame (orig_len - incl_len, or 0). An IP
+// length beyond the captured bytes is snaplen truncation only if those bytes existed on the wire;
+// beyond the wire length the header is lying and the packet is malformed.
 // Header, checksum, trim to total_length, fragment flag. rest = L4 bytes (empty for fragments).
-Step parse_ipv4(Bytes l3, DecodedPacket& p) noexcept;
+Step parse_ipv4(Bytes l3, std::uint32_t snaplen_cut, DecodedPacket& p) noexcept;
 // Fixed header plus extension chain (HBH/Routing/DestOpts/Fragment). rest = L4 bytes.
-Step parse_ipv6(Bytes l3, DecodedPacket& p) noexcept;
+Step parse_ipv6(Bytes l3, std::uint32_t snaplen_cut, DecodedPacket& p) noexcept;
 // rest = TCP payload; logical = payload length per the IP length.
 Step parse_tcp(Bytes l4, std::uint32_t logical, DecodedPacket& p) noexcept;
 // rest = UDP payload; logical = UDP length - 8.

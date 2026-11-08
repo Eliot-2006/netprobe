@@ -1,0 +1,6 @@
+{
+  "fixture": "truncated_tail",
+  "records": 3,
+  "status": "truncated",
+  "truncated_tail_bytes": 66
+}

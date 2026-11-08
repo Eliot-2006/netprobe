@@ -1,0 +1,59 @@
+{
+  "fixture": "tcp_port_reuse",
+  "flows": {
+    "tcp": 2,
+    "udp": 0
+  },
+  "records": 23,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 300,
+        "sha256": "8535bc40ae3930754471f6f18aa85484ba343f200faf5cd0fb33410df81dfee0"
+      },
+      "client": [
+        "10.8.0.1",
+        33007
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 1500,
+        "sha256": "330f3437890c7ceb55b0c6296835783393a41652ad6ce573c7346f720074ee94"
+      },
+      "server": [
+        "10.8.0.2",
+        9005
+      ]
+    },
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 400,
+        "sha256": "3cca449960b8a1cf77794cf7450447b023df8cf3980c4b96eb54e4838ce4997d"
+      },
+      "client": [
+        "10.8.0.1",
+        33007
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 2500,
+        "sha256": "95b6efbb3cee8e247721f6dde0674467ac1b91e5053182d35056b5797e083b05"
+      },
+      "server": [
+        "10.8.0.2",
+        9005
+      ]
+    }
+  ]
+}

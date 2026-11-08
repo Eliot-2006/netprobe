@@ -1,0 +1,41 @@
+{
+  "fixture": "tcp_loss_acked",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "records": 16,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 100,
+        "sha256": "476b1b88d360d33eb6d543603133b42cff3cf34b20bce67b31284c84e42ee071"
+      },
+      "client": [
+        "10.2.0.1",
+        33001
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [
+          [
+            3000,
+            1000,
+            true
+          ]
+        ],
+        "length": 7000,
+        "sha256": "54bf55c3ed96e5d4918adec7b3d1efe5b9eff732366ba4af0eba0eba650cb43b"
+      },
+      "server": [
+        "10.2.0.2",
+        8080
+      ]
+    }
+  ]
+}

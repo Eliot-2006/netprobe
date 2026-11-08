@@ -1,0 +1,9 @@
+{
+  "fixture": "header_only",
+  "flows": {
+    "tcp": 0,
+    "udp": 0
+  },
+  "records": 0,
+  "status": "complete"
+}

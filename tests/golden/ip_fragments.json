@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "tool": {
+    "name": "netprobe",
+    "version": "0.1.0"
+  },
+  "options": {
+    "idle_timeout_s": 300,
+    "max_flows": 1000000,
+    "max_stream_buffer": 4194304,
+    "max_reassembly_memory": 536870912,
+    "top_flows": 1000
+  },
+  "capture": {
+    "path": "tests/fixtures/ip_fragments.pcap",
+    "file_size": 3564,
+    "format": "pcap",
+    "byte_order": "little",
+    "ts_precision": "usec",
+    "version": "2.4",
+    "snaplen": 262144,
+    "link_type": 1,
+    "link_type_name": "EN10MB",
+    "status": "complete",
+    "truncated_tail_bytes": 0,
+    "records": 6,
+    "captured_bytes": 3444,
+    "original_bytes": 3444,
+    "records_truncated_by_snaplen": 0,
+    "timestamp_regressions": 0,
+    "first_ts_ns": 1700000000000000000,
+    "last_ts_ns": 1700000000005000000,
+    "duration_ns": 5000000
+  },
+  "decode": {
+    "layers": {
+      "ethernet": 6,
+      "vlan_tagged": 0,
+      "ipv4": 4,
+      "ipv6": 2,
+      "tcp": 0,
+      "udp": 0,
+      "icmp": 0,
+      "icmpv6": 0,
+      "arp": 0,
+      "ip_fragments": 6,
+      "other_ethertype": 0,
+      "other_ip_proto": 0
+    },
+    "ethertypes": {
+      "0x0800": 4,
+      "0x86dd": 2
+    },
+    "ip_protocols": {},
+    "vlans": {},
+    "errors": {
+      "truncated": {},
+      "malformed": {},
+      "unsupported": {}
+    },
+    "anomalies": {
+      "ipv4_bad_checksum": 0,
+      "ip_zero_length": 0,
+      "udp_trailing_bytes": 0,
+      "tcp_options_malformed": 0,
+      "tcp_flags_invalid": 0,
+      "incl_gt_orig": 0,
+      "ts_fraction_overflow": 0,
+      "version_anomaly": 0
+    }
+  },
+  "timeline": {
+    "origin_ns": 1700000000000000000,
+    "bucket_width_ns": 1000000,
+    "clamped": 0,
+    "buckets": [
+      {
+        "packets": 1,
+        "bytes": 1034
+      },
+      {
+        "packets": 1,
+        "bytes": 1034
+      },
+      {
+        "packets": 1,
+        "bytes": 1034
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 170
+      },
+      {
+        "packets": 1,
+        "bytes": 112
+      }
+    ]
+  },
+  "flows": {
+    "tcp": {
+      "total": 0,
+      "handshake_full": 0,
+      "handshake_partial": 0,
+      "handshake_none": 0,
+      "close_fin": 0,
+      "close_rst": 0,
+      "close_idle_timeout": 0,
+      "close_end_of_capture": 0,
+      "close_reused": 0,
+      "close_evicted": 0,
+      "complete": 0,
+      "with_gaps": 0
+    },
+    "udp": {
+      "total": 0,
+      "close_idle_timeout": 0,
+      "close_end_of_capture": 0,
+      "close_evicted": 0
+    },
+    "top_by_bytes": [],
+    "top_incomplete": []
+  },
+  "reassembly": {
+    "delivered_bytes": 0,
+    "retransmitted_segments": 0,
+    "retransmitted_bytes": 0,
+    "out_of_order_segments": 0,
+    "overlap_bytes": 0,
+    "conflicting_overlap_bytes": 0,
+    "gap_count": 0,
+    "gap_bytes": 0,
+    "acked_gap_bytes": 0,
+    "snaplen_missing_bytes": 0,
+    "out_of_window_segments": 0,
+    "data_after_fin": 0,
+    "data_after_rst": 0,
+    "forced_flushes": 0,
+    "evicted_flows": 0,
+    "limits_hit": false
+  },
+  "talkers": [],
+  "services": []
+}

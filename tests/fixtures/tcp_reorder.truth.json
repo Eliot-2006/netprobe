@@ -1,0 +1,36 @@
+{
+  "fixture": "tcp_reorder",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "min_out_of_order_segments": 4,
+  "records": 21,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 200,
+        "sha256": "fc4d3698425e87b4fd82f2521a0da227560041775c13e41f649a9693cb4670d4"
+      },
+      "client": [
+        "10.1.0.1",
+        33000
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 12000,
+        "sha256": "b7ee4f4d86d876959a98307cb0a407be9c6829d26c25bb13f683419d656e2508"
+      },
+      "server": [
+        "10.1.0.2",
+        8080
+      ]
+    }
+  ]
+}

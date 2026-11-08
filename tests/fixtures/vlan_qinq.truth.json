@@ -1,0 +1,19 @@
+{
+  "fixture": "vlan_qinq",
+  "flows": {
+    "tcp": 4,
+    "udp": 1
+  },
+  "layers": {
+    "ipv4": 7,
+    "tcp": 4,
+    "udp": 3,
+    "vlan_tagged": 7
+  },
+  "records": 7,
+  "status": "complete",
+  "vlans": {
+    "100": 4,
+    "300": 3
+  }
+}

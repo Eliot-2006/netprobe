@@ -1,0 +1,382 @@
+{
+  "schema_version": 1,
+  "tool": {
+    "name": "netprobe",
+    "version": "0.1.0"
+  },
+  "options": {
+    "idle_timeout_s": 300,
+    "max_flows": 1000000,
+    "max_stream_buffer": 4194304,
+    "max_reassembly_memory": 536870912,
+    "top_flows": 1000
+  },
+  "capture": {
+    "path": "tests/fixtures/udp_mixed.pcap",
+    "file_size": 1682,
+    "format": "pcap",
+    "byte_order": "little",
+    "ts_precision": "usec",
+    "version": "2.4",
+    "snaplen": 262144,
+    "link_type": 1,
+    "link_type_name": "EN10MB",
+    "status": "complete",
+    "truncated_tail_bytes": 0,
+    "records": 13,
+    "captured_bytes": 1450,
+    "original_bytes": 1450,
+    "records_truncated_by_snaplen": 0,
+    "timestamp_regressions": 0,
+    "first_ts_ns": 1700000000000000000,
+    "last_ts_ns": 1700000000012000000,
+    "duration_ns": 12000000
+  },
+  "decode": {
+    "layers": {
+      "ethernet": 13,
+      "vlan_tagged": 0,
+      "ipv4": 11,
+      "ipv6": 1,
+      "tcp": 0,
+      "udp": 11,
+      "icmp": 1,
+      "icmpv6": 0,
+      "arp": 1,
+      "ip_fragments": 0,
+      "other_ethertype": 0,
+      "other_ip_proto": 0
+    },
+    "ethertypes": {
+      "0x0800": 11,
+      "0x0806": 1,
+      "0x86dd": 1
+    },
+    "ip_protocols": {
+      "1": 1,
+      "17": 11
+    },
+    "vlans": {},
+    "errors": {
+      "truncated": {},
+      "malformed": {},
+      "unsupported": {}
+    },
+    "anomalies": {
+      "ipv4_bad_checksum": 0,
+      "ip_zero_length": 0,
+      "udp_trailing_bytes": 0,
+      "tcp_options_malformed": 0,
+      "tcp_flags_invalid": 0,
+      "incl_gt_orig": 0,
+      "ts_fraction_overflow": 0,
+      "version_anomaly": 0
+    }
+  },
+  "timeline": {
+    "origin_ns": 1700000000000000000,
+    "bucket_width_ns": 1000000,
+    "clamped": 0,
+    "buckets": [
+      {
+        "packets": 1,
+        "bytes": 82
+      },
+      {
+        "packets": 1,
+        "bytes": 162
+      },
+      {
+        "packets": 1,
+        "bytes": 82
+      },
+      {
+        "packets": 1,
+        "bytes": 162
+      },
+      {
+        "packets": 1,
+        "bytes": 82
+      },
+      {
+        "packets": 1,
+        "bytes": 162
+      },
+      {
+        "packets": 1,
+        "bytes": 82
+      },
+      {
+        "packets": 1,
+        "bytes": 162
+      },
+      {
+        "packets": 1,
+        "bytes": 82
+      },
+      {
+        "packets": 1,
+        "bytes": 162
+      },
+      {
+        "packets": 1,
+        "bytes": 110
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      },
+      {
+        "packets": 1,
+        "bytes": 60
+      }
+    ]
+  },
+  "flows": {
+    "tcp": {
+      "total": 0,
+      "handshake_full": 0,
+      "handshake_partial": 0,
+      "handshake_none": 0,
+      "close_fin": 0,
+      "close_rst": 0,
+      "close_idle_timeout": 0,
+      "close_end_of_capture": 0,
+      "close_reused": 0,
+      "close_evicted": 0,
+      "complete": 0,
+      "with_gaps": 0
+    },
+    "udp": {
+      "total": 6,
+      "close_idle_timeout": 0,
+      "close_end_of_capture": 6,
+      "close_evicted": 0
+    },
+    "top_by_bytes": [
+      {
+        "id": 0,
+        "proto": "udp",
+        "ip_version": 4,
+        "client": {
+          "address": "10.10.0.1",
+          "port": 50000
+        },
+        "server": {
+          "address": "10.10.0.53",
+          "port": 53
+        },
+        "orientation": "first_packet",
+        "close_reason": "end_of_capture",
+        "first_ts_ns": 1700000000000000000,
+        "last_ts_ns": 1700000000001000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 82,
+          "payload_bytes": 40
+        },
+        "s2c": {
+          "packets": 1,
+          "bytes": 162,
+          "payload_bytes": 120
+        }
+      },
+      {
+        "id": 2,
+        "proto": "udp",
+        "ip_version": 4,
+        "client": {
+          "address": "10.10.0.1",
+          "port": 50001
+        },
+        "server": {
+          "address": "10.10.0.53",
+          "port": 53
+        },
+        "orientation": "first_packet",
+        "close_reason": "end_of_capture",
+        "first_ts_ns": 1700000000002000000,
+        "last_ts_ns": 1700000000003000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 82,
+          "payload_bytes": 40
+        },
+        "s2c": {
+          "packets": 1,
+          "bytes": 162,
+          "payload_bytes": 120
+        }
+      },
+      {
+        "id": 4,
+        "proto": "udp",
+        "ip_version": 4,
+        "client": {
+          "address": "10.10.0.1",
+          "port": 50002
+        },
+        "server": {
+          "address": "10.10.0.53",
+          "port": 53
+        },
+        "orientation": "first_packet",
+        "close_reason": "end_of_capture",
+        "first_ts_ns": 1700000000004000000,
+        "last_ts_ns": 1700000000005000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 82,
+          "payload_bytes": 40
+        },
+        "s2c": {
+          "packets": 1,
+          "bytes": 162,
+          "payload_bytes": 120
+        }
+      },
+      {
+        "id": 6,
+        "proto": "udp",
+        "ip_version": 4,
+        "client": {
+          "address": "10.10.0.1",
+          "port": 50003
+        },
+        "server": {
+          "address": "10.10.0.53",
+          "port": 53
+        },
+        "orientation": "first_packet",
+        "close_reason": "end_of_capture",
+        "first_ts_ns": 1700000000006000000,
+        "last_ts_ns": 1700000000007000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 82,
+          "payload_bytes": 40
+        },
+        "s2c": {
+          "packets": 1,
+          "bytes": 162,
+          "payload_bytes": 120
+        }
+      },
+      {
+        "id": 8,
+        "proto": "udp",
+        "ip_version": 4,
+        "client": {
+          "address": "10.10.0.1",
+          "port": 50004
+        },
+        "server": {
+          "address": "10.10.0.53",
+          "port": 53
+        },
+        "orientation": "first_packet",
+        "close_reason": "end_of_capture",
+        "first_ts_ns": 1700000000008000000,
+        "last_ts_ns": 1700000000009000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 82,
+          "payload_bytes": 40
+        },
+        "s2c": {
+          "packets": 1,
+          "bytes": 162,
+          "payload_bytes": 120
+        }
+      },
+      {
+        "id": 10,
+        "proto": "udp",
+        "ip_version": 6,
+        "client": {
+          "address": "2001:db8::1",
+          "port": 123
+        },
+        "server": {
+          "address": "2001:db8::2",
+          "port": 123
+        },
+        "orientation": "first_packet",
+        "close_reason": "end_of_capture",
+        "first_ts_ns": 1700000000010000000,
+        "last_ts_ns": 1700000000010000000,
+        "c2s": {
+          "packets": 1,
+          "bytes": 110,
+          "payload_bytes": 48
+        },
+        "s2c": {
+          "packets": 0,
+          "bytes": 0,
+          "payload_bytes": 0
+        }
+      }
+    ],
+    "top_incomplete": []
+  },
+  "reassembly": {
+    "delivered_bytes": 0,
+    "retransmitted_segments": 0,
+    "retransmitted_bytes": 0,
+    "out_of_order_segments": 0,
+    "overlap_bytes": 0,
+    "conflicting_overlap_bytes": 0,
+    "gap_count": 0,
+    "gap_bytes": 0,
+    "acked_gap_bytes": 0,
+    "snaplen_missing_bytes": 0,
+    "out_of_window_segments": 0,
+    "data_after_fin": 0,
+    "data_after_rst": 0,
+    "forced_flushes": 0,
+    "evicted_flows": 0,
+    "limits_hit": false
+  },
+  "talkers": [
+    {
+      "address": "10.10.0.1",
+      "bytes_sent": 410,
+      "bytes_received": 810,
+      "flows": 5
+    },
+    {
+      "address": "10.10.0.53",
+      "bytes_sent": 810,
+      "bytes_received": 410,
+      "flows": 5
+    },
+    {
+      "address": "2001:db8::1",
+      "bytes_sent": 110,
+      "bytes_received": 0,
+      "flows": 1
+    },
+    {
+      "address": "2001:db8::2",
+      "bytes_sent": 0,
+      "bytes_received": 110,
+      "flows": 1
+    }
+  ],
+  "services": [
+    {
+      "proto": "udp",
+      "port": 53,
+      "label": "dns",
+      "flows": 5,
+      "bytes": 1220
+    },
+    {
+      "proto": "udp",
+      "port": 123,
+      "label": "ntp",
+      "flows": 1,
+      "bytes": 110
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "fixture": "tcp_clean_v6",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "layers": {
+    "ipv6": 16,
+    "tcp": 16
+  },
+  "records": 16,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [],
+        "length": 300,
+        "sha256": "1a7928b67e38ad3d90ff2f601c423e962dab4cecc3f14a46f208d4a7ad554951"
+      },
+      "client": [
+        "2001:db8::5",
+        40000
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [],
+        "length": 9000,
+        "sha256": "dfde90266f89f1819739041e4b8c40608d8628ea21de33d6a92beecf67e57dd2"
+      },
+      "server": [
+        "2001:db8::80",
+        443
+      ]
+    }
+  ]
+}

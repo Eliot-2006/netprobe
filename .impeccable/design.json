@@ -1,0 +1,757 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-08T08:30:08+00:00",
+  "title": "Design System: NetProbe",
+  "extensions": {
+    "colorMeta": {
+      "bay": {
+        "role": "neutral",
+        "displayName": "Bay Grey",
+        "canonical": "#e4e7ea",
+        "tonalRamp": [
+          "#090b0d",
+          "#232527",
+          "#404245",
+          "#5f6164",
+          "#808385",
+          "#a2a5a8",
+          "#c6c9cc",
+          "#eceff2"
+        ]
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Slate Rail",
+        "canonical": "#262d33",
+        "tonalRamp": [
+          "#060c11",
+          "#1f262c",
+          "#3c4349",
+          "#5a6269",
+          "#7b848b",
+          "#9ea6ae",
+          "#c1cad2",
+          "#e7f0f8"
+        ]
+      },
+      "rail-ink": {
+        "role": "neutral",
+        "displayName": "Rail Ink",
+        "canonical": "#eef0f1",
+        "tonalRamp": [
+          "#0a0b0c",
+          "#242526",
+          "#414243",
+          "#606162",
+          "#818383",
+          "#a3a5a6",
+          "#c7c9ca",
+          "#edeff0"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#191c1f",
+        "tonalRamp": [
+          "#090b0e",
+          "#222529",
+          "#3f4246",
+          "#5e6265",
+          "#7f8387",
+          "#a1a5a9",
+          "#c5cace",
+          "#ebeff3"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Slate Muted",
+        "canonical": "#4c555d",
+        "tonalRamp": [
+          "#060c12",
+          "#1e262d",
+          "#3a434b",
+          "#59626b",
+          "#7a848c",
+          "#9ca6af",
+          "#c0cbd4",
+          "#e5f0fa"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#c9cfd4",
+        "tonalRamp": [
+          "#080c0f",
+          "#212629",
+          "#3e4347",
+          "#5d6266",
+          "#7e8388",
+          "#a0a6ab",
+          "#c4cacf",
+          "#e9eff4"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#f7f8f9",
+        "tonalRamp": [
+          "#0b0b0c",
+          "#242526",
+          "#414243",
+          "#606162",
+          "#818283",
+          "#a4a5a6",
+          "#c8c9ca",
+          "#edeeef"
+        ]
+      },
+      "track": {
+        "role": "neutral",
+        "displayName": "Track",
+        "canonical": "#e4e7ea",
+        "tonalRamp": [
+          "#090b0d",
+          "#232527",
+          "#404245",
+          "#5f6164",
+          "#808385",
+          "#a2a5a8",
+          "#c6c9cc",
+          "#eceff2"
+        ]
+      },
+      "tcp-strip": {
+        "role": "secondary",
+        "displayName": "Buff Strip",
+        "canonical": "#f1e7c9",
+        "tonalRamp": [
+          "#110a00",
+          "#2c240b",
+          "#4a4128",
+          "#6a6146",
+          "#8b8267",
+          "#aea588",
+          "#d3c9ac",
+          "#f8eed0"
+        ]
+      },
+      "tcp-tab": {
+        "role": "secondary",
+        "displayName": "Buff Tab",
+        "canonical": "#d6c088",
+        "tonalRamp": [
+          "#180700",
+          "#342200",
+          "#523f00",
+          "#735f28",
+          "#95804a",
+          "#b9a36c",
+          "#ddc78f",
+          "#ffedb3"
+        ]
+      },
+      "udp-strip": {
+        "role": "secondary",
+        "displayName": "Pale Blue Strip",
+        "canonical": "#dde9f3",
+        "tonalRamp": [
+          "#050c12",
+          "#1d262e",
+          "#3a434b",
+          "#58636b",
+          "#79848d",
+          "#9ba7b0",
+          "#bfcbd5",
+          "#e4f0fa"
+        ]
+      },
+      "udp-tab": {
+        "role": "secondary",
+        "displayName": "Blue Tab",
+        "canonical": "#a9c3d9",
+        "tonalRamp": [
+          "#000c1b",
+          "#112738",
+          "#2e4557",
+          "#4d6478",
+          "#6d869a",
+          "#8fa9be",
+          "#b3cde3",
+          "#d7f2ff"
+        ]
+      },
+      "alert": {
+        "role": "primary",
+        "displayName": "Signal Red-Orange",
+        "canonical": "#c2410c",
+        "tonalRamp": [
+          "#2d0000",
+          "#5f0000",
+          "#860000",
+          "#ad2c00",
+          "#d55325",
+          "#fd784c",
+          "#ff9d70",
+          "#ffd2b3"
+        ]
+      },
+      "alert-ink": {
+        "role": "primary",
+        "displayName": "Deep Signal Ink",
+        "canonical": "#9a3412",
+        "tonalRamp": [
+          "#2d0000",
+          "#570000",
+          "#7c1400",
+          "#a23b1b",
+          "#c85e3f",
+          "#f08261",
+          "#ffa684",
+          "#ffd2b5"
+        ]
+      },
+      "alert-soft": {
+        "role": "primary",
+        "displayName": "Signal Wash",
+        "canonical": "#fde3d3",
+        "tonalRamp": [
+          "#160700",
+          "#332014",
+          "#513d30",
+          "#725c4e",
+          "#947d6f",
+          "#b8a090",
+          "#ddc3b4",
+          "#ffe9d9"
+        ]
+      },
+      "on-alert": {
+        "role": "primary",
+        "displayName": "On-Signal",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#a5a5a5",
+          "#c9c9c9",
+          "#eeeeee"
+        ]
+      },
+      "bar": {
+        "role": "neutral",
+        "displayName": "Bar",
+        "canonical": "#4c555d",
+        "tonalRamp": [
+          "#060c12",
+          "#1e262d",
+          "#3a434b",
+          "#59626b",
+          "#7a848c",
+          "#9ca6af",
+          "#c0cbd4",
+          "#e5f0fa"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "#262d33",
+        "tonalRamp": [
+          "#060c11",
+          "#1f262c",
+          "#3c4349",
+          "#5a6269",
+          "#7b848b",
+          "#9ea6ae",
+          "#c1cad2",
+          "#e7f0f8"
+        ]
+      },
+      "have": {
+        "role": "neutral",
+        "displayName": "Have",
+        "canonical": "#262d33",
+        "tonalRamp": [
+          "#060c11",
+          "#1f262c",
+          "#3c4349",
+          "#5a6269",
+          "#7b848b",
+          "#9ea6ae",
+          "#c1cad2",
+          "#e7f0f8"
+        ]
+      },
+      "bay-dark": {
+        "role": "neutral",
+        "displayName": "Bay Grey (dark scheme)",
+        "canonical": "#101316",
+        "tonalRamp": [
+          "#090b0e",
+          "#222529",
+          "#3f4246",
+          "#5e6265",
+          "#7f8387",
+          "#a1a5aa",
+          "#c5cace",
+          "#ebeff4"
+        ]
+      },
+      "rail-dark": {
+        "role": "neutral",
+        "displayName": "Slate Rail (dark scheme)",
+        "canonical": "#030405",
+        "tonalRamp": [
+          "#090b0d",
+          "#232527",
+          "#404244",
+          "#5f6264",
+          "#808385",
+          "#a2a5a8",
+          "#c6c9cc",
+          "#eceff2"
+        ]
+      },
+      "rail-ink-dark": {
+        "role": "neutral",
+        "displayName": "Rail Ink (dark scheme)",
+        "canonical": "#d9dde0",
+        "tonalRamp": [
+          "#090c0d",
+          "#232528",
+          "#3f4245",
+          "#5e6264",
+          "#7f8386",
+          "#a2a6a8",
+          "#c6cacd",
+          "#ebeff2"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark scheme)",
+        "canonical": "#e6e4dc",
+        "tonalRamp": [
+          "#0d0b06",
+          "#27251f",
+          "#44423c",
+          "#63615a",
+          "#84827b",
+          "#a7a59e",
+          "#cbc9c1",
+          "#f1efe6"
+        ]
+      },
+      "muted-dark": {
+        "role": "neutral",
+        "displayName": "Slate Muted (dark scheme)",
+        "canonical": "#a1a8ae",
+        "tonalRamp": [
+          "#070c10",
+          "#20262a",
+          "#3d4348",
+          "#5c6268",
+          "#7d8389",
+          "#9fa6ac",
+          "#c3cad0",
+          "#e8f0f6"
+        ]
+      },
+      "rule-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark scheme)",
+        "canonical": "#2c3237",
+        "tonalRamp": [
+          "#070c10",
+          "#20262b",
+          "#3d4348",
+          "#5b6268",
+          "#7c8389",
+          "#9fa6ac",
+          "#c3cad1",
+          "#e8f0f6"
+        ]
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Paper (dark scheme)",
+        "canonical": "#171b1f",
+        "tonalRamp": [
+          "#080c0f",
+          "#21262a",
+          "#3e4347",
+          "#5d6267",
+          "#7e8388",
+          "#a0a6ab",
+          "#c4cacf",
+          "#e9eff5"
+        ]
+      },
+      "track-dark": {
+        "role": "neutral",
+        "displayName": "Track (dark scheme)",
+        "canonical": "#22272c",
+        "tonalRamp": [
+          "#070c10",
+          "#21262b",
+          "#3d4348",
+          "#5c6268",
+          "#7d8389",
+          "#9fa6ac",
+          "#c3cad1",
+          "#e9eff6"
+        ]
+      },
+      "tcp-strip-dark": {
+        "role": "secondary",
+        "displayName": "Buff Strip (dark scheme)",
+        "canonical": "#2b281f",
+        "tonalRamp": [
+          "#0e0b04",
+          "#28251c",
+          "#454238",
+          "#646157",
+          "#868277",
+          "#a9a59a",
+          "#cdc9bd",
+          "#f2eee2"
+        ]
+      },
+      "tcp-tab-dark": {
+        "role": "secondary",
+        "displayName": "Buff Tab (dark scheme)",
+        "canonical": "#4f4630",
+        "tonalRamp": [
+          "#110a00",
+          "#2c240f",
+          "#4a412b",
+          "#6a604a",
+          "#8b826a",
+          "#aea48b",
+          "#d3c8af",
+          "#f9eed3"
+        ]
+      },
+      "udp-strip-dark": {
+        "role": "secondary",
+        "displayName": "Pale Blue Strip (dark scheme)",
+        "canonical": "#1d2832",
+        "tonalRamp": [
+          "#040c15",
+          "#1b2630",
+          "#38434e",
+          "#56636e",
+          "#778490",
+          "#99a7b4",
+          "#bdcbd8",
+          "#e2f1fe"
+        ]
+      },
+      "udp-tab-dark": {
+        "role": "secondary",
+        "displayName": "Blue Tab (dark scheme)",
+        "canonical": "#2f4254",
+        "tonalRamp": [
+          "#000c1b",
+          "#152737",
+          "#314456",
+          "#506477",
+          "#708599",
+          "#92a8bd",
+          "#b6cce2",
+          "#daf2ff"
+        ]
+      },
+      "alert-dark": {
+        "role": "primary",
+        "displayName": "Signal Red-Orange (dark scheme)",
+        "canonical": "#fb7a45",
+        "tonalRamp": [
+          "#2d0000",
+          "#5e0000",
+          "#840000",
+          "#ab3000",
+          "#d3561a",
+          "#fb7a45",
+          "#ff9f6a",
+          "#ffd4af"
+        ]
+      },
+      "alert-ink-dark": {
+        "role": "primary",
+        "displayName": "Deep Signal Ink (dark scheme)",
+        "canonical": "#fd9a6f",
+        "tonalRamp": [
+          "#2c0000",
+          "#530000",
+          "#771f00",
+          "#9c4213",
+          "#c2653a",
+          "#e9885d",
+          "#ffac80",
+          "#ffd4ac"
+        ]
+      },
+      "alert-soft-dark": {
+        "role": "primary",
+        "displayName": "Signal Wash (dark scheme)",
+        "canonical": "#3a1f14",
+        "tonalRamp": [
+          "#1a0400",
+          "#381d12",
+          "#573a2e",
+          "#78594c",
+          "#9b7a6c",
+          "#bf9c8e",
+          "#e5c0b2",
+          "#ffe5d6"
+        ]
+      },
+      "on-alert-dark": {
+        "role": "primary",
+        "displayName": "On-Signal (dark scheme)",
+        "canonical": "#1f0d04",
+        "tonalRamp": [
+          "#170601",
+          "#332015",
+          "#523c31",
+          "#735c4f",
+          "#957c6f",
+          "#b99f91",
+          "#dec3b5",
+          "#ffe8da"
+        ]
+      },
+      "bar-dark": {
+        "role": "neutral",
+        "displayName": "Bar (dark scheme)",
+        "canonical": "#8f979e",
+        "tonalRamp": [
+          "#070c11",
+          "#1f262b",
+          "#3c4349",
+          "#5b6269",
+          "#7c838a",
+          "#9ea6ad",
+          "#c2cad2",
+          "#e7f0f7"
+        ]
+      },
+      "line-dark": {
+        "role": "neutral",
+        "displayName": "Line (dark scheme)",
+        "canonical": "#e6e4dc",
+        "tonalRamp": [
+          "#0d0b06",
+          "#27251f",
+          "#44423c",
+          "#63615a",
+          "#84827b",
+          "#a7a59e",
+          "#cbc9c1",
+          "#f1efe6"
+        ]
+      },
+      "have-dark": {
+        "role": "neutral",
+        "displayName": "Have (dark scheme)",
+        "canonical": "#b9b3a1",
+        "tonalRamp": [
+          "#0f0b01",
+          "#2a2516",
+          "#474232",
+          "#666151",
+          "#888271",
+          "#aba593",
+          "#cfc9b7",
+          "#f5eedb"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Capture file name on the designator strip; 1.7rem under 600px."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles, with optional inline muted sans subtitle."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Table captions, muted."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Prose, findings, cells (0.88rem in tables); notes cap at 75ch."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Headline figures on the designator strip; tabular."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase figure labels and table headers; tags at 0.08em."
+      },
+      "strip-tab": {
+        "displayName": "Strip Tab",
+        "purpose": "Protocol and status tabs; vertical in strips, horizontal in table rows."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "IP addresses, ports, byte offsets: column-aligned data only."
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "patterns": [
+      {
+        "name": "ack-gap-hatch",
+        "value": "45deg stripes: 2.5px alert on 6px alert-soft tile, 1px alert outline",
+        "purpose": "Stream gap the receiver ACKed (capture loss)."
+      },
+      {
+        "name": "unacked-gap",
+        "value": "strip paper fill, 1px alert outline",
+        "purpose": "Stream gap never ACKed (unsent data)."
+      }
+    ],
+    "focus": {
+      "value": "outline:2px solid var(--alert);outline-offset:2px",
+      "purpose": "Universal :focus-visible ring."
+    },
+    "breakpoints": [
+      {
+        "name": "narrow",
+        "value": "600px"
+      }
+    ],
+    "colorScheme": "light dark via prefers-color-scheme; '-dark' tokens are the dark-scheme values of the same custom properties.",
+    "fontEmbedding": "Barlow Condensed Bold (OFL) inlined as woff2 data URI under family name 'NP Cond'."
+  },
+  "components": [
+    {
+      "name": "Designator Strip",
+      "kind": "card",
+      "refersTo": "capture-strip",
+      "description": "Capture header: slate-framed buff strip, vertical status tab, labelled figures.",
+      "html": "<header class=\"ds-cap\"><div class=\"ds-cap-strip\"><div class=\"ds-cap-tab\">complete</div><div class=\"ds-cap-body\"><h1 class=\"ds-cap-h\">tcp_loss_acked.pcap</h1><dl class=\"ds-figs\"><div><dt>Packets</dt><dd>16</dd></div><div><dt>Bytes on wire</dt><dd>7.83 KiB</dd></div><div><dt>Missing TCP bytes</dt><dd class=\"bad\">1000 B</dd></div></dl></div></div></header>",
+      "css": ".ds-cap{background:#262d33;padding:5px;color:#191c1f;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px}.ds-cap-strip{display:grid;grid-template-columns:auto 1fr;background:#f1e7c9}.ds-cap-tab{background:#d6c088;writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.85rem;line-height:1;letter-spacing:.14em;text-transform:uppercase;padding:14px 10px;text-align:center}.ds-cap-body{padding:14px 18px 12px}.ds-cap-h{margin:0;font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:2.1rem;line-height:1.15}.ds-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin:12px 0 0;border-top:1px solid #c9cfd4}.ds-figs div{padding:8px 12px 2px;border-right:1px solid #c9cfd4}.ds-figs div:first-child{padding-left:0}.ds-figs div:last-child{border-right:0}.ds-figs dt{font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#4c555d}.ds-figs dd{margin:2px 0 0;font-size:1.1rem;font-weight:600;font-variant-numeric:tabular-nums}.ds-figs dd.bad{color:#9a3412}"
+    },
+    {
+      "name": "Status Tab (problem)",
+      "kind": "chip",
+      "refersTo": "capture-tab-bad",
+      "description": "Status tab when the capture is not complete; signal fill.",
+      "html": "<div class=\"ds-tab-bad\" tabindex=\"0\">truncated</div>",
+      "css": ".ds-tab-bad{display:inline-block;background:#c2410c;color:#fff;font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.85rem;line-height:1;letter-spacing:.14em;text-transform:uppercase;padding:14px 10px;writing-mode:vertical-rl;transform:rotate(180deg)}.ds-tab-bad:focus-visible{outline:2px solid #c2410c;outline-offset:2px}"
+    },
+    {
+      "name": "Finding Tag",
+      "kind": "chip",
+      "refersTo": "tag-alert",
+      "description": "Condensed uppercase tag leading a finding row; alert for problems.",
+      "html": "<span class=\"ds-tag\">gaps</span>",
+      "css": ".ds-tag{font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.8rem;line-height:1.4;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#c2410c;padding:0 7px}"
+    },
+    {
+      "name": "All-Clear Tag",
+      "kind": "chip",
+      "refersTo": "tag-ok",
+      "description": "Buff tag on the single all-clear finding row.",
+      "html": "<span class=\"ds-tag-ok\">clear</span>",
+      "css": ".ds-tag-ok{font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.8rem;line-height:1.4;letter-spacing:.08em;text-transform:uppercase;color:#191c1f;background:#d6c088;padding:0 7px}"
+    },
+    {
+      "name": "Findings Holder",
+      "kind": "custom",
+      "refersTo": "strip-holder",
+      "description": "Slate rail stacking paper finding rows with a 4px gap.",
+      "html": "<ul class=\"ds-holder\"><li><span class=\"ds-t\">gaps</span><span>1 TCP flow is missing 1000 B of stream data.</span></li><li><span class=\"ds-t\">decode</span><span>3 records failed to decode.</span></li></ul>",
+      "css": ".ds-holder{list-style:none;margin:0;background:#262d33;padding:4px;display:grid;gap:4px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;color:#191c1f}.ds-holder li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;background:#f7f8f9;padding:10px 14px}.ds-t{font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#c2410c;padding:0 7px}"
+    },
+    {
+      "name": "Flow Strip with Stream Gauge",
+      "kind": "custom",
+      "refersTo": "stream-gauge",
+      "description": "Signature: TCP strip with to-scale direction gauges; ACKed gaps hatched, unACKed outlined.",
+      "html": "<article class=\"ds-strip\"><div class=\"ds-strip-tab\">TCP</div><div class=\"ds-strip-body\"><div class=\"ds-head\"><span class=\"ds-id\">#0</span><span class=\"ds-mono\">10.2.0.1:33001 &rarr; 10.2.0.2:8080</span><span class=\"ds-bad\">1000 B missing</span></div><div class=\"ds-gauge\"><span class=\"ds-dir\">S&rarr;C</span><svg viewBox=\"0 0 1000 16\" preserveAspectRatio=\"none\"><defs><pattern id=\"dshatch\" width=\"6\" height=\"6\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><rect width=\"6\" height=\"6\" fill=\"#fde3d3\"/><rect width=\"2.5\" height=\"6\" fill=\"#c2410c\"/></pattern></defs><rect width=\"1000\" height=\"16\" fill=\"#e4e7ea\"/><rect width=\"380\" height=\"16\" fill=\"#262d33\"/><rect x=\"380\" width=\"120\" height=\"16\" fill=\"url(#dshatch)\" stroke=\"#c2410c\"/><rect x=\"500\" width=\"500\" height=\"16\" fill=\"#262d33\"/></svg></div></div></article>",
+      "css": ".ds-strip{display:grid;grid-template-columns:auto 1fr;background:#f1e7c9;color:#191c1f;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;border:4px solid #262d33}.ds-strip-tab{background:#d6c088;padding:10px 8px;writing-mode:vertical-rl;transform:rotate(180deg);font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.78rem;line-height:1;letter-spacing:.14em;text-align:center}.ds-strip-body{padding:10px 14px 12px}.ds-head{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}.ds-id{font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:1.08em}.ds-mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.92em}.ds-bad{color:#9a3412;font-weight:600}.ds-gauge{display:grid;grid-template-columns:44px 1fr;gap:4px 10px;align-items:center;margin-top:8px}.ds-dir{font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.82rem;letter-spacing:.08em;color:#4c555d}.ds-gauge svg{display:block;width:100%;height:16px}"
+    },
+    {
+      "name": "Strip Table",
+      "kind": "custom",
+      "refersTo": "strip-tcp",
+      "description": "Real table whose rows are strips on a slate rail; tab cell carries protocol.",
+      "html": "<table class=\"ds-st\"><thead><tr><th>Proto</th><th>Flow</th><th class=\"n\">Bytes</th></tr></thead><tbody><tr><td class=\"tab\">TCP</td><td class=\"ds-mono\">10.2.0.1:33001 &rarr; 10.2.0.2:8080</td><td class=\"n\">7.83 KiB</td></tr><tr class=\"udp\"><td class=\"tab\">UDP</td><td class=\"ds-mono\">10.10.0.1:50000 &harr; 10.10.0.53:53</td><td class=\"n\">1.19 KiB</td></tr></tbody></table>",
+      "css": ".ds-st{width:100%;background:#262d33;border-collapse:separate;border-spacing:0 4px;padding:0 4px;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:.88rem;color:#191c1f}.ds-st th{text-align:left;font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:#eef0f1;padding:6px 10px}.ds-st td{background:#f1e7c9;padding:7px 10px}.ds-st tr.udp td{background:#dde9f3}.ds-st td.tab{background:#d6c088;font-family:'Barlow Condensed','Arial Narrow','Roboto Condensed',sans-serif;font-weight:700;font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;width:1%}.ds-st tr.udp td.tab{background:#a9c3d9}.ds-st .n{text-align:right;font-variant-numeric:tabular-nums}.ds-mono{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:.92em}"
+    },
+    {
+      "name": "Share Bars Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Paper panel with slate top rule holding label/track/count/percent rows.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-hbar\"><span>TCP complete</span><span class=\"ds-track\"><span style=\"width:0%\"></span></span><span class=\"n\">0</span><span class=\"n\">0%</span><span class=\"ds-badt\">TCP with gaps</span><span class=\"ds-track\"><span class=\"e\" style=\"width:100%\"></span></span><span class=\"n\">1</span><span class=\"n\">100%</span><span>Full handshake</span><span class=\"ds-track\"><span style=\"width:100%\"></span></span><span class=\"n\">1</span><span class=\"n\">100%</span></div></div>",
+      "css": ".ds-panel{background:#f7f8f9;padding:14px 16px;border-top:3px solid #262d33;color:#191c1f;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;}.ds-hbar{display:grid;grid-template-columns:minmax(90px,max-content) 1fr minmax(40px,max-content) 48px;gap:5px 12px;align-items:center;font-size:.88rem}.ds-track{height:9px;background:#e4e7ea;overflow:hidden}.ds-track span{display:block;height:100%;background:#4c555d}.ds-track span.e{background:#c2410c}.ds-hbar .n{text-align:right;font-variant-numeric:tabular-nums}.ds-badt{color:#9a3412;font-weight:600}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Strip Bay",
+    "overview": "The report is an air-traffic controller's flight-progress board. Every flow is a paper strip slotted into a dark slate holder; the bay is ordered so trouble rises to the top. The capture itself is the first strip (the designator strip), carrying the capture status on its tab and five to six key figures. Below it, findings, timeline, breakdowns, and flow bays follow in triage order. The metaphor lives in palette, type, and density only: tables stay real tables with headers, charts stay plain SVG.\n\nDensity is high and calm. Paper-toned surfaces sit on a pale grey bay (light) or near-black bay (dark), framed by thin slate rails. Condensed sans carries designators and labels, a system sans carries prose, monospace carries addresses and offsets because they are column-aligned data, and every number uses tabular figures. One signal colour, red-orange, is reserved for problems and appears nowhere else. The category default (grey card dashboard, KPI tiles, donut chart) is explicitly refused.\n\nThe whole system ships as one offline file: inline CSS, inline SVG, an embedded Barlow Condensed (bold, woff2) face, no scripts. Both colour schemes are first-class and switch on `prefers-color-scheme`.",
+    "keyCharacteristics": [
+      "Dark slate rails holding paper strips; buff for TCP, pale blue for UDP, each with a coloured left tab.",
+      "One reserved alert colour for gaps, truncation, decode errors, and limits hit.",
+      "Condensed bold for designators and labels; tabular figures for every number; monospace for addresses.",
+      "Square corners, hairline rules, no shadows.",
+      "Bar length encodes exact quantity; both directions of a stream share one scale."
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Red-orange marks problems only: gaps, truncation, decode errors, limits hit. Never use it for emphasis, branding, or a \"primary\" action. A clean capture renders with no red-orange at all except the focus ring.",
+        "section": "colors"
+      },
+      {
+        "name": "The Protocol Paper Rule",
+        "body": "Strip colour carries protocol: buff is TCP, pale blue is UDP. Don't introduce a third paper tone without a third protocol.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Every number is set with tabular figures and right-aligned in tables. Columns of counts must line up digit for digit.",
+        "section": "typography"
+      },
+      {
+        "name": "The Designator Rule",
+        "body": "Condensed bold is for designators and labels (names, tabs, headers, flow ids). Sentences never set in it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Rail, Not Shadow, Rule",
+        "body": "To lift a surface, put it in a rail or give it a slate top rule. Never a box-shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do reserve signal red-orange (#c2410c light, #fb7a45 dark) for problems only; use alert ink for problem text on paper.",
+      "Do encode protocol by strip paper: buff for TCP, pale blue for UDP, with the matching tab.",
+      "Do draw quantity bars to scale, sharing one scale across directions of the same flow.",
+      "Do set every number in tabular figures and right-align numeric columns.",
+      "Do keep tables as real tables with headers and scope, even when styled as strips.",
+      "Do ship both schemes; every new colour needs a dark-scheme twin."
+    ],
+    "donts": [
+      "Don't build a grey card dashboard with KPI tiles or donut charts; that is the category default this world refuses.",
+      "Don't add border radius or box-shadows; use rails and hairlines.",
+      "Don't set prose in the condensed face, or set IP addresses and offsets in anything but monospace.",
+      "Don't load external fonts, scripts, or images; the face is embedded and everything is inline."
+    ]
+  }
+}

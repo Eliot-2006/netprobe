@@ -1,0 +1,59 @@
+{
+  "fixture": "tcp_snaplen_96",
+  "flows": {
+    "tcp": 1,
+    "udp": 0
+  },
+  "records": 12,
+  "records_truncated_by_snaplen": 4,
+  "snaplen": 96,
+  "status": "complete",
+  "streams": [
+    {
+      "c2s": {
+        "conflict": false,
+        "gaps": [
+          [
+            42,
+            58,
+            true
+          ]
+        ],
+        "length": 42,
+        "sha256": "9e1032a4d57133c945587825151e1a7a781d4ac9e5b1e9b89d3398f0b335390e"
+      },
+      "client": [
+        "10.9.0.1",
+        33008
+      ],
+      "close": "fin",
+      "handshake": "full",
+      "s2c": {
+        "conflict": false,
+        "gaps": [
+          [
+            42,
+            958,
+            true
+          ],
+          [
+            1042,
+            958,
+            true
+          ],
+          [
+            2042,
+            958,
+            true
+          ]
+        ],
+        "length": 126,
+        "sha256": "22606093f690cb0fa08564c77f081d2980777bd9e008c483e0f9872bf36f535f"
+      },
+      "server": [
+        "10.9.0.2",
+        9006
+      ]
+    }
+  ]
+}

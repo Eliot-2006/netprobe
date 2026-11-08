@@ -264,3 +264,14 @@ TEST(TopK, KeepsBestWithIdTieBreak) {
     EXPECT_EQ(v[0].id, 0u);
     EXPECT_EQ(v[1].id, 1u);
 }
+
+TEST(Analyzer, SynAfterStrayPacketsFixesOrientation) {
+    Feeder f;
+    f.tcp(S, 80, C, 1000, ACK, 9000, 5000, {}, kSec); // stray server packet first
+    f.tcp(C, 1000, S, 80, SYN, 4999, 0, {}, kSec + 1);
+    auto top = f.a.finish().top_bytes.sorted();
+    ASSERT_EQ(top.size(), 1u);
+    EXPECT_TRUE(top[0].orientation_handshake);
+    EXPECT_EQ(top[0].client.port, 1000);
+    EXPECT_EQ(top[0].c2s.packets, 1u);
+}

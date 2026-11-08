@@ -121,6 +121,23 @@ The brief is well scoped. Most of it stands; this section records where it was t
 
 ---
 
+### 2.3 Implementation revisions (recorded after independent review)
+
+These deliberate deviations from the original text were made during implementation; the code,
+tests and this list agree.
+
+| Item | Original text | As built | Reason |
+|---|---|---|---|
+| FR-DEC-5 | malformed TCP options counted as `malformed.tcp_options` | counted as anomaly `tcp_options_malformed`; status stays `ok` | the segment is fully decoded and processed, so it is not a decode error; error totals stay "records that failed to decode" |
+| 8.1 anomalies | `ipv4_zero_total_length` | `ip_zero_length` (IPv4 and IPv6), plus `tcp_options_malformed`, `version_anomaly` | one counter covers both IP versions' TSO case |
+| 8.1 reassembly | `peak_buffered_bytes` always present | omitted under `--deterministic`; `evicted_flows` added | the value is a sum of per-shard peaks and depends on `--workers` |
+| 8.1 options | `workers` always present | omitted under `--deterministic` | the deterministic contract is identical for any `-j` |
+| FR-FLOW-3 | client = sender of SYN without ACK | also: a SYN-ACK seen first makes its receiver the client; a SYN arriving after stray packets re-orients the flow | both follow from the handshake; tested |
+| FR-FLOW-7 | evict the LRU open flow | lingering closed flows are reclaimed first (natural close reason), then the LRU open flow (`evicted`); either sets `limits_hit` | closed flows lose only their linger window |
+| D7 | gaps declared lazily | ACKed holes released once min(1 MiB, buffer/2) is buffered behind them | measured: forced flushes 29 → 0 on a 0.1%-loss capture |
+| FR-TCP-8 | FIN records `fin_offset` | a FIN behind already delivered data is ignored | a stale FIN would otherwise discard all later data |
+| Integrity | `snaplen_truncated` | chosen when cumulative snaplen-missing bytes cover the gap bytes; may misclassify if snaplen holes were later refilled and other loss occurred | known limitation |
+
 ## 3. Protocol support matrix
 
 ### 3.1 File format

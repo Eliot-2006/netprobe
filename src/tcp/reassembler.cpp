@@ -75,9 +75,10 @@ void StreamReassembler::drain(StreamSink& sink) {
     while (!ooo_.empty() && ooo_.begin()->first == delivered_) {
         const auto it = ooo_.begin();
         auto data = Bytes(it->second.bytes);
-        if (fin_offset_)
-            data = data.first(static_cast<std::size_t>(
-                std::min<std::uint64_t>(data.size(), *fin_offset_ - delivered_)));
+        if (fin_offset_ && data.size() > *fin_offset_ - delivered_) {
+            data = data.first(static_cast<std::size_t>(*fin_offset_ - delivered_));
+            ++stats_.data_after_fin; // bytes past FIN are dropped, never delivered
+        }
         emit_data(data, sink);
         const auto cost = it->second.bytes.size() + kSegmentOverhead;
         budget_->refund(cost);
@@ -192,9 +193,12 @@ void StreamReassembler::release_acked_holes(StreamSink& sink) {
 void StreamReassembler::on_fin(std::uint32_t fin_seq) noexcept {
     if (!initialized_ || fin_offset_)
         return;
-    fin_offset_ = unwrap_.to_offset(fin_seq, delivered_);
-    if (!fin_offset_)
+    const auto fin = unwrap_.to_offset(fin_seq, delivered_);
+    // A FIN behind data already delivered is stale or bogus: honoring it would discard the
+    // buffer and every later byte. Ignore it (independent review finding #1).
+    if (!fin || *fin < delivered_)
         return;
+    fin_offset_ = fin;
     stats_.fin_seen = true;
     // FIN is evidence of the payload end even when its preceding data was never captured.
     highest_end_ = std::max(highest_end_, *fin_offset_);
@@ -205,6 +209,7 @@ void StreamReassembler::on_fin(std::uint32_t fin_seq) noexcept {
         budget_->refund(cost);
         buffered_accounted_ -= cost;
         it = ooo_.erase(it);
+        ++stats_.data_after_fin;
     }
     // Keep any suffix allocation charged until delivery; vector::resize would not release it.
     update_complete();
@@ -212,7 +217,9 @@ void StreamReassembler::on_fin(std::uint32_t fin_seq) noexcept {
 void StreamReassembler::on_peer_ack(std::uint32_t ack) noexcept {
     if (!initialized_)
         return;
-    if (const auto off = unwrap_.to_offset(ack, delivered_))
+    // Unwrap against the furthest known point so a direction whose data is never captured still
+    // tracks ACKs past the 2^30 window (independent review finding #9).
+    if (const auto off = unwrap_.to_offset(ack, std::max(delivered_, max_acked_)))
         max_acked_ = std::max(max_acked_, *off);
 }
 void StreamReassembler::flush_with_incoming(std::uint64_t off, Bytes incoming, StreamSink& sink) {

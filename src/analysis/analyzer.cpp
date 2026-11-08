@@ -175,6 +175,11 @@ void Analyzer::update(Flow& f, Direction d, const PacketRecord& rec, const Decod
             ds.has_wscale = true;
             ds.wscale = pkt.wscale;
         }
+        if (!(fl & tcp_flag::ack) && !f.orientation_handshake) {
+            // FR-FLOW-3: the SYN sender is the client even if stray packets came first.
+            f.client_dir = d;
+            f.orientation_handshake = true;
+        }
         if ((fl & tcp_flag::ack) && d != f.client_dir) {
             f.synack_seen = true;
         }

@@ -410,3 +410,51 @@ TEST(ReassemblyAckedHole, UnackedOrSmallHolesStayLazy) {
     EXPECT_TRUE(unacked.check_invariants());
     EXPECT_TRUE(small.check_invariants());
 }
+
+// Independent review regressions.
+TEST(ReassemblyReview, StaleFinBehindDeliveredIsIgnored) {
+    MemoryBudget budget{1U << 20};
+    StreamReassembler s{budget, {1U << 20}};
+    test::RecordingSink sink;
+    s.init(0);
+    std::vector<std::byte> seg(1000, std::byte{3});
+    s.on_segment(0, 1000, seg, sink);                     // delivered = 1000
+    s.on_segment(1500, 500, Bytes(seg).first(500), sink); // buffered
+    s.on_fin(500);                                        // stale FIN behind delivered data
+    EXPECT_FALSE(s.stats().fin_seen);
+    EXPECT_GT(s.buffered_bytes(), 0u); // buffer kept
+    s.on_segment(1000, 500, Bytes(seg).first(500), sink);
+    EXPECT_EQ(s.delivered_offset(), 2000u);
+    EXPECT_EQ(s.stats().data_after_fin, 0u);
+    EXPECT_TRUE(s.check_invariants());
+}
+
+TEST(ReassemblyReview, BytesPastFinAreCountedWhenTrimmedOrErased) {
+    MemoryBudget budget{1U << 20};
+    StreamReassembler s{budget, {1U << 20}};
+    test::RecordingSink sink;
+    s.init(0);
+    std::vector<std::byte> seg(1000, std::byte{4});
+    s.on_segment(2000, 1000, seg, sink); // wholly beyond the FIN below: erased
+    s.on_segment(1000, 1000, seg, sink); // straddles the FIN: trimmed at drain
+    s.on_fin(1500);
+    s.on_segment(0, 1000, seg, sink);
+    EXPECT_EQ(s.delivered_offset(), 1500u);
+    EXPECT_EQ(s.stats().data_after_fin, 2u);
+    EXPECT_TRUE(s.stats().complete());
+    EXPECT_TRUE(s.check_invariants());
+}
+
+TEST(ReassemblyReview, AckWatermarkTracksBeyondWindowWithoutData) {
+    MemoryBudget budget{1U << 20};
+    StreamReassembler s{budget, {1U << 20}};
+    test::RecordingSink sink;
+    s.init(0);
+    for (std::uint32_t ack = 0; ack <= 3u << 30; ack += 1u << 28) {
+        s.on_peer_ack(ack); // 256 MiB steps, no data ever captured in this direction
+    }
+    s.on_segment(3u << 30, 10, Bytes(std::vector<std::byte>(10).data(), 10), sink);
+    s.flush(sink);
+    ASSERT_FALSE(s.stats().gaps.empty());
+    EXPECT_TRUE(s.stats().gaps[0].acked); // the ACKs past 2^30 were not lost
+}

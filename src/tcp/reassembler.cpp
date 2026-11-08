@@ -169,6 +169,25 @@ void StreamReassembler::on_segment(std::uint32_t seq, std::uint32_t logical_len,
         pos = piece_end;
     }
     drain(sink);
+    release_acked_holes(sink);
+}
+// PRD D7 (revised): a hole the receiver has already ACKed will never be retransmitted, so it is
+// capture loss. Gaps stay lazy, but once a large run of later data is buffered behind an ACKed
+// hole (far beyond any plausible ACK-before-data capture skew), declare it instead of holding
+// data until the per-stream limit forces a flush.
+void StreamReassembler::release_acked_holes(StreamSink& sink) {
+    const std::uint64_t threshold =
+        std::min<std::uint64_t>(1ULL << 20, limits_.max_stream_buffer / 2);
+    while (!ooo_.empty()) {
+        const auto hole_end = ooo_.begin()->first;
+        const auto last = std::prev(ooo_.end());
+        const auto buffered_end = last->first + last->second.bytes.size();
+        if (hole_end > max_acked_ || buffered_end - hole_end < threshold) {
+            return;
+        }
+        emit_gap(hole_end, sink);
+        drain(sink);
+    }
 }
 void StreamReassembler::on_fin(std::uint32_t fin_seq) noexcept {
     if (!initialized_ || fin_offset_)

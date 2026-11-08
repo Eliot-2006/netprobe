@@ -61,6 +61,7 @@ private:
     void drain(StreamSink& sink);
     void flush_with_incoming(std::uint64_t off, Bytes incoming, StreamSink& sink);
     void update_complete() noexcept;
+    void release_acked_holes(StreamSink& sink);
     SeqUnwrapper unwrap_;
     bool initialized_ = false;
     std::uint64_t delivered_ = 0, highest_end_ = 0, max_acked_ = 0;

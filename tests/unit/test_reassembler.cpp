@@ -369,3 +369,44 @@ TEST(ReassemblyWindow, RejectsFarBehindDeliveredAsWellAsFarAhead) {
     EXPECT_EQ(stream.stats().out_of_window_segments, 2);
     EXPECT_EQ(stream.delivered_offset(), (1U << 30) + 16);
 }
+
+// PRD D7 (revised): an ACKed hole with >= threshold bytes buffered behind it is declared early.
+TEST(ReassemblyAckedHole, DeclaredOnceEnoughDataIsBufferedBehindIt) {
+    MemoryBudget budget{1U << 24};
+    StreamReassembler s{budget, {256U << 10}}; // threshold = 128 KiB
+    test::RecordingSink sink;
+    s.init(1000);
+    std::vector<std::byte> seg(1000, std::byte{7});
+    s.on_peer_ack(1000 + 300'000);             // receiver has everything
+    for (std::uint32_t i = 1; i <= 140; ++i) { // segment 0 (bytes 0..999) is lost
+        s.on_segment(1000 + i * 1000, 1000, seg, sink);
+        ASSERT_TRUE(s.check_invariants());
+    }
+    EXPECT_EQ(s.stats().gap_count, 1u);
+    EXPECT_EQ(s.stats().acked_gap_bytes, 1000u);
+    EXPECT_EQ(s.stats().forced_flushes, 0u);
+    EXPECT_EQ(s.buffered_bytes(), 0u);
+    EXPECT_EQ(s.delivered_offset(), 141'000u);
+}
+
+TEST(ReassemblyAckedHole, UnackedOrSmallHolesStayLazy) {
+    MemoryBudget budget{1U << 24};
+    StreamReassembler unacked{budget, {256U << 10}};
+    StreamReassembler small{budget, {256U << 10}};
+    test::RecordingSink sink;
+    unacked.init(0);
+    small.init(0);
+    std::vector<std::byte> seg(1000, std::byte{1});
+    small.on_peer_ack(500'000);
+    for (std::uint32_t i = 1; i <= 140; ++i) {
+        unacked.on_segment(i * 1000, 1000, seg, sink); // no ACK evidence at all
+    }
+    for (std::uint32_t i = 1; i <= 100; ++i) {
+        small.on_segment(i * 1000, 1000, seg, sink); // 100 KiB < 128 KiB threshold
+    }
+    EXPECT_EQ(unacked.stats().gap_count, 0u);
+    EXPECT_EQ(small.stats().gap_count, 0u);
+    EXPECT_GT(small.buffered_bytes(), 0u);
+    EXPECT_TRUE(unacked.check_invariants());
+    EXPECT_TRUE(small.check_invariants());
+}

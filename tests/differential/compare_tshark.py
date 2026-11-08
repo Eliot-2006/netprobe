@@ -10,6 +10,9 @@
 
 Documented exclusions: IP fragments (tshark reassembles them), streams with gaps or conflicting
 overlaps (overlap policies differ), streams with data after RST (dropped by design, FR-TCP-9),
+records after the point where NetProbe stops reading a truncated/corrupt file (and records
+tshark refuses to dissect), streams with out-of-order or retransmitted segments (tshark's follow
+output is unreliable there; see comment below),
 malformed/unsupported records (dissectors disagree on partial data).
 Usage: compare_tshark.py --netprobe build/release/netprobe capture.pcap
 """
@@ -78,11 +81,22 @@ def main():
 
     ts = tshark_fields(pcap)
     npd = netprobe_dump(args.netprobe, pcap)
-    if len(ts) != len(npd):
+    status = subprocess.run([args.netprobe, "analyze", str(pcap), "-q", "--deterministic",
+                             "--json", "-"], capture_output=True, text=True).stdout
+    cap_status = json.loads(status)["capture"]["status"]
+    partial = cap_status != "complete"
+    if len(ts) != len(npd) and not partial:
         failures.append(f"record count: tshark {len(ts)} vs netprobe {len(npd)}")
+    # Truncated/corrupt files: tshark versions differ in how far they read; compare the prefix.
+    ts = ts[:len(npd)]
 
     # 1. per packet
     for t, n in zip(ts, npd):
+        if cap_status == "corrupt":
+            # tshark 4.2 misparses corrupt files (e.g. frame.len 2, 0, 1700000000 for
+            # tests/fixtures/corrupt_record.pcap); there is no reliable per-packet reference.
+            stats["skipped_corrupt_file"] += 1
+            continue
         if n["status"] != "ok" or not n["sport"]:
             stats["skipped_not_ok_l4"] += 1
             continue
@@ -144,8 +158,14 @@ def main():
                 continue
             # Exclusions: gaps, conflicting overlaps (policies differ) and data after RST
             # (NetProbe drops it by design, FR-TCP-9; tshark follow keeps it).
+            # tshark's follow output drops or repeats bytes on reordered/retransmitted streams
+            # (single- and two-pass, 4.2 and 4.6): e.g. samples/lossy_bulk_transfer.pcap stream 1,
+            # whose FIN fixes the length at 96,360 bytes, follows as 93,514. Compare only streams
+            # tshark reproduces faithfully; reordered streams are covered by the ground-truth and
+            # reference-model tests instead.
             clean = all(f[d]["gap_count"] == 0 and f[d]["conflicting_overlap_bytes"] == 0
-                        and f[d]["data_after_rst"] == 0 for d in ("c2s", "s2c"))
+                        and f[d]["data_after_rst"] == 0 and f[d]["out_of_order_segments"] == 0
+                        and f[d]["retransmitted_bytes"] == 0 for d in ("c2s", "s2c"))
             if not clean:
                 stats["streams_excluded_gaps_or_conflicts"] += 1
                 continue

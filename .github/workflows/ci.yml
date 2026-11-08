@@ -60,7 +60,7 @@ jobs:
       - run: tshark --version | head -1
       - run: |
           shopt -s nullglob
-          for f in tests/fixtures/*.pcap; do
+          for f in tests/fixtures/*.pcap samples/*.pcap; do
             python3 -I tests/differential/compare_tshark.py --netprobe build/release/netprobe "$f"
           done
 

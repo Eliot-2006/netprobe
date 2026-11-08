@@ -10,3 +10,11 @@ Small, synthetic, committed captures used by `scripts/demo.sh`. None contain rea
 
 `synth_pcap` is built by the `bench` preset (`cmake --preset bench && cmake --build --preset bench`).
 Output is deterministic for the same arguments.
+
+The published copies in `docs/demo/` (served by GitHub Pages) are regenerated with:
+
+```bash
+for f in http_session lossy_bulk_transfer mixed_traffic; do
+    build/release/netprobe analyze samples/$f.pcap -q --deterministic --html docs/demo/$f.html
+done
+```

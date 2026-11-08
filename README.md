@@ -1,55 +1,136 @@
 # NetProbe
 
-NetProbe is an offline analyzer for classic PCAP files, written in C++20. It memory-maps a
-capture, decodes Ethernet, VLAN, IPv4, IPv6, TCP and UDP, tracks flows, reassembles TCP byte
-streams, and reports exactly which bytes are missing. Output is a text summary, deterministic
-JSON, and a self-contained HTML report.
+[![ci](https://github.com/Eliot-2006/netprobe/actions/workflows/ci.yml/badge.svg)](https://github.com/Eliot-2006/netprobe/actions/workflows/ci.yml)
 
-## What it is not
+A high-performance offline network packet analyzer in C++20. NetProbe reads classic PCAP captures,
+decodes Ethernet, VLAN, IPv4, IPv6, TCP and UDP with bounds-checked zero-copy parsing, reassembles
+TCP byte streams, and reports exactly which bytes of which stream are missing and whether the
+receiver acknowledged them. Output is a terminal summary, deterministic JSON, and a self-contained
+HTML report.
 
-- Not a live capture tool: no libpcap, no BPF filters.
-- No pcapng (it detects pcapng and suggests `editcap -F pcap in.pcapng out.pcap`).
-- No IP fragment reassembly (fragments are counted).
-- No application-layer dissectors (HTTP, DNS, TLS, QUIC). Service names are a port-based heuristic.
-- No TCP/UDP checksum verification.
-- No stdin or pipe input; the input must be a regular file.
-- No interactive UI or web server. Not for Windows or 32-bit targets.
-- Ethernet link type only.
+The packet parsing and TCP reassembly are implemented from scratch. Nothing wraps Wireshark or
+libpcap.
 
-## Features
+![Incomplete TCP streams in the HTML report: each stream drawn to scale with the missing byte ranges cut out](docs/images/report-streams.png)
 
-- Zero-copy PCAP reader over `mmap` (four magics: micro/nanosecond, either byte order).
-- Bounds-checked decoding with no `reinterpret_cast`; malformed packets are counted by layer and reason.
-- Canonical bidirectional flow table with LRU expiry, port-reuse detection and flow-count eviction.
-- TCP reassembly: 64-bit offsets (wraparound-safe), first-wins overlap with conflict detection,
-  zero-copy in-order delivery, lazy gap declaration, bounded memory.
-- Optional sharded pipeline (`--workers N`) with SPSC rings; reports are byte-identical for any N
-  when no memory limit is hit.
-- `dump` subcommand: one TSV line per packet, used for differential testing against `tshark`.
-- Stream export: one file per direction per TCP flow.
+*Part of the HTML report for `samples/lossy_bulk_transfer.pcap`. Each TCP direction is drawn to
+scale. Hatched blocks are byte ranges the receiver acknowledged but the capture never recorded,
+listed exactly underneath.*
 
-## Quickstart
+**Live sample reports:** [lossy bulk transfer](https://eliot-2006.github.io/netprobe/demo/lossy_bulk_transfer.html) ·
+[mixed traffic](https://eliot-2006.github.io/netprobe/demo/mixed_traffic.html) ·
+[clean HTTP session](https://eliot-2006.github.io/netprobe/demo/http_session.html)
 
-Linux needs GCC 13+ or Clang 17+, CMake 3.25+ and Ninja. macOS needs Homebrew LLVM (see below).
+## Highlights
+
+- **TCP reassembly that holds up on hostile input.** 32-bit sequence numbers are unwrapped into
+  64-bit stream offsets in one function, so wraparound cannot leak into the buffer logic.
+  Out-of-order data sits in a disjoint interval map. When copies overlap, the first one wins and
+  byte-level conflicts are counted. In-order segments are delivered straight from the
+  memory-mapped file without copying.
+- **Bounded memory by construction.** Every buffered segment is charged to a per-stream limit
+  and a per-shard budget, overhead included, so floods of tiny segments cannot get around the
+  limits. A 100,000-SYN flood is held at the flow limit. A release frontier returns processed
+  file pages to the OS: peak RSS on a 1 GiB capture is 33–78 MiB on Linux.
+- **Parallel without changing the answer.** `--workers N` shards flows across threads through
+  lock-free single-producer/single-consumer rings. A fixed pool of batches doubles as
+  backpressure. Reports are byte-identical for any worker count, and a test checks that on every
+  run.
+- **Correctness checked against independent sources:**
+  - 21 Scapy-built captures with expected results recorded when they were generated.
+  - A deliberately naive reference reassembler checked on randomized segment schedules.
+  - Per-packet, per-conversation and per-stream comparison with `tshark`.
+  - Identical output across worker counts.
+- **Hardened and measured.**
+  - CI runs ASan+UBSan and TSan with GCC 13 and Clang 18.
+  - Three libFuzzer targets, 30 minutes each: 1.87 billion executions, 0 findings.
+  - Every benchmark number in [`docs/results.md`](docs/results.md) comes with the command that
+    produced it, including the one target that was missed.
+
+## Results
+
+Linux (Ubuntu 24.04 container on an Apple M3 Pro, arm64), GCC 13 `-O2`, page cache warm, 1 GiB
+synthetic captures, median of 5. Full methodology in [`docs/results.md`](docs/results.md).
+
+| Measure | Result |
+|---|---|
+| Packet decoding (single core) | 38.6 M packets/s |
+| End to end, single-threaded | 3.73 M packets/s (1.77 GiB/s) |
+| End to end, 4 workers | 7.69 M packets/s (2.06×) |
+| TCP reassembly with 10 % reordering | 31.4 GiB/s |
+| Peak memory, 1 GiB capture | 33–78 MiB |
+| Memory per live flow | ≈ 790 B (target was 512 B: not met, cause in results.md) |
+
+Scaling stops near 2× because the single reader thread is about 47 % of the per-packet cost, which
+is the Amdahl ceiling the measurements match. A single elephant flow cannot be split across
+threads.
+
+## Try it
+
+Requires CMake 3.25+, Ninja and GCC 13+ or Clang 17+ (macOS: Homebrew LLVM, see
+[Platform notes](#platform-notes)).
 
 ```bash
-export CXX=/opt/homebrew/opt/llvm/bin/clang++     # macOS only; omit on Linux
+scripts/demo.sh        # builds, analyzes the three sample captures, writes out/demo/*.html|json
+```
+
+Or run it on any classic PCAP file:
+
+```bash
 cmake --preset release && cmake --build --preset release --target netprobe
-build/release/netprobe analyze samples/mixed_traffic.pcap --json out.json --html out.html
+build/release/netprobe analyze capture.pcap --html report.html --json report.json
 ```
 
-One-command demo (builds, analyzes the three sample captures, writes JSON, HTML and exported
-streams to `out/demo/`):
+Terminal output for `samples/lossy_bulk_transfer.pcap`:
 
-```bash
-scripts/demo.sh
 ```
+netprobe 0.1.0  samples/lossy_bulk_transfer.pcap  (pcap 2.4, usec, EN10MB, snaplen 65535)
+  629 packets  587.89 KiB  span 00:00:00.003  status: complete
+  IPv4 629  IPv6 0  VLAN 0  TCP 629  UDP 0  ICMP 0  ARP 0  fragments 0
+  decode errors: none
+  flows: 6 TCP (6 full handshake, 3 complete), 0 UDP; 3 TCP flows with gaps (9.98 KiB missing)
+  reassembly: 554.63 KiB delivered, 0 B retransmitted, 154 out-of-order segments, 0 conflicting overlap bytes
+  top flows:
+    #1        10.0.0.3:61776 -> 172.16.0.156:8080  tcp  99.71 KiB  fin  complete
+    #3        10.0.0.4:12686 -> 172.16.0.21:3306  tcp  99.71 KiB  fin  complete
+    #4        10.0.0.2:9717 -> 172.16.0.107:80  tcp  99.71 KiB  fin  complete
+    #8        10.0.0.1:26859 -> 172.16.0.125:53  tcp  98.23 KiB  fin  gaps
+    #13       10.0.0.5:60585 -> 172.16.0.122:25  tcp  96.75 KiB  fin  gaps
+    #0        10.0.0.6:59033 -> 172.16.0.221:80  tcp  93.79 KiB  fin  gaps
+```
+
+The HTML report is a single offline file (inline CSS and SVG, no scripts) that leads with
+capture integrity and findings:
+
+![HTML report header: capture status, key figures, findings and traffic timeline](docs/images/report-overview.png)
+
+![Top flows table in the HTML report](docs/images/report-topflows.png)
+
+## How it works
+
+```
+capture.pcap ─mmap─► PcapReader ─► decode_packet ─► ReaderStats
+  (zero-copy views)                     │
+                          ┌─────────────┴─────────────┐
+                    --workers 0                 --workers N
+                  Analyzer (inline)     hash(flow) ─► SPSC ring ─► Analyzer shard × N
+                          └─────────────┬─────────────┘
+                                 merge (deterministic)
+                                        ▼
+                         text summary · JSON · HTML · stream files
+```
+
+Each `Analyzer` shard owns its flow table, TCP state, reassemblers and memory budget, with no
+shared state. [`docs/design.md`](docs/design.md) covers the ownership invariants, the reassembly
+algorithm, the concurrency design and why the determinism guarantee holds.
+[`docs/PRD.md`](docs/PRD.md) has the original requirements and a log of the decisions that changed
+during implementation.
 
 ## Usage
 
 ```
 netprobe analyze <capture.pcap> [options]
-netprobe dump <capture.pcap> [--limit N]
+netprobe dump <capture.pcap> [--limit N]      # one TSV line per decoded packet
 netprobe --help | --version
 ```
 
@@ -57,95 +138,68 @@ netprobe --help | --version
 |---|---|
 | `-o, --json <path>` | JSON report; `-` writes to stdout and implies `--quiet` |
 | `--html <path>` | standalone HTML report |
-| `--export-streams <dir>` | write reassembled TCP streams |
+| `--export-streams <dir>` | write each reassembled TCP direction to a file |
 | `-q, --quiet` | suppress the text summary |
-| `--deterministic` | omit the `run` section (timings, host, RSS) and `options.workers` |
-| `-j, --workers <N>` | 0 = single-threaded (default); N >= 1 = reader plus N shards (max 256) |
+| `--deterministic` | omit timings, host and worker count so output is reproducible |
+| `-j, --workers <N>` | 0 = single-threaded (default); N ≥ 1 = reader plus N shards (max 256) |
 | `--idle-timeout <sec>` | open-flow idle timeout in capture time (default 300) |
 | `--max-flows <N>` | max concurrent flows (default 1,000,000) |
 | `--max-stream-buffer <size>` | out-of-order buffer per TCP direction (default 4M) |
 | `--max-reassembly-memory <size>` | total out-of-order budget (default 512M) |
 | `--top-flows <N>` | detailed flow records per list (default 1000, max 100,000) |
 
-Sizes accept `K`, `M`, `G` suffixes (powers of 1024). Out-of-range values are a usage error.
-
-| Exit code | Meaning |
-|---|---|
-| 0 | success, capture complete |
-| 1 | usage error |
-| 2 | fatal input error (cannot open, not classic PCAP, unsupported link type); no report |
-| 3 | report produced, but the capture is truncated or corrupt |
-| 4 | output or internal error |
-
-## Platform and toolchain
-
-- **Linux** is the primary target. CI builds with GCC 13 and Clang 18 on Ubuntu 24.04.
-- **macOS** builds and tests pass, but only with Homebrew LLVM (`brew install llvm`): Apple Clang 15
-  lacks `std::format`, its ASan aborts at start-up on the development machine, and it has no
-  libFuzzer. Set `CXX=/opt/homebrew/opt/llvm/bin/clang++`; CMake links LLVM's libc++ automatically.
-  `scripts/demo.sh` picks this compiler itself when `CXX` is unset.
-- On macOS with Homebrew LLVM 23.1.5, the `dev`, `release`, `tsan` and `fuzz` presets work (the
-  fuzz build adds `-Wl,-ld_classic` there). The `asan` preset builds but tests that throw abort
-  (`MappedFile.MissingFileThrowsInputErrorNamingPath`, `MappedFile.NonRegularFileRejected`,
-  `Pipeline.WorkerExceptionPropagatesWithoutHanging`): Homebrew's libc++abi and ASan's
-  `__cxa_throw` interposition disagree. Run `asan` on Linux (CI does).
-- On macOS, `MADV_DONTNEED` did not bound resident memory in the author's check, so the memory
-  release frontier is effective on Linux only. See `docs/design.md`.
-- Linux runs from a macOS host: `tools/docker/Dockerfile` builds the Ubuntu 24.04 image used for
-  sanitizers, fuzzing, the tshark differential and benchmarks
-  (`docker build -t netprobe-dev:24.04 tools/docker`, then
-  `docker run --rm -v "$PWD":/src -w /src netprobe-dev:24.04 bench/run_linux_container.sh`).
-
-## Repository layout
-
-| Path | Contents |
-|---|---|
-| `src/` | `io/` mmap, `pcap/` reader, `decode/`, `flow/`, `tcp/` (sequence math, reassembler), `analysis/` (analyzer, stats, memory budget), `pipeline/`, `report/`, `app.cpp`, `cli.cpp` |
-| `tests/` | `unit/` (GoogleTest), `integration/` (Python, run by CTest), `fixtures/` + `golden/`, `fuzz/`, `reference/` (independent reassembly model), `differential/` (`tshark`), `support/` |
-| `bench/`, `tools/` | Google Benchmark suites, `run_e2e.sh`, `synth_pcap` dataset generator (`bench` preset) |
-| `samples/` | three small synthetic captures used by the demo |
-| `scripts/demo.sh` | one-command demo |
-| `docs/` | `PRD.md`, `design.md`, `results.md` |
-| `DESIGN.md` | visual design system of the HTML report |
-
-Source files are globbed; adding one needs no CMake edit, only a re-run of the configure step.
+Sizes accept `K`, `M`, `G` (powers of 1024). Exit codes: 0 success; 1 usage error; 2 unreadable or
+unsupported input; 3 report written but the capture is truncated or corrupt; 4 output or internal
+error.
 
 ## Testing
 
 ```bash
-cmake --preset dev && cmake --build --preset dev && ctest --preset dev      # debug, hardened
+cmake --preset dev  && cmake --build --preset dev  && ctest --preset dev    # debug + hardened STL
 cmake --preset asan && cmake --build --preset asan && ctest --preset asan   # ASan + UBSan
 cmake --preset tsan && cmake --build --preset tsan && ctest --preset tsan   # ThreadSanitizer
 cmake --preset fuzz && cmake --build --preset fuzz                          # build/fuzz/fuzz_*
 ```
 
-Use a separate `build/<preset>` per configuration. Unit tests need network access on first
-configure to fetch GoogleTest (pinned). Fuzz targets need a Clang with libFuzzer.
-Verification strategy (four oracles, fuzzing, sanitizers, CI) is in `docs/design.md`.
+The suite covers 148 tests: GoogleTest unit, property and pipeline tests, plus Python integration
+tests run by CTest (ground truth, golden files, determinism, HTML safety). CI also runs a fuzz smoke
+test, the `tshark` differential and clang-format. The verification strategy is described in
+[`docs/design.md`](docs/design.md#9-verification-strategy).
 
-## Results summary
+## Scope and limitations
 
-From [`docs/results.md`](docs/results.md) section A: final code, Ubuntu 24.04 container on an Apple
-M3 Pro (arm64, 11 vCPUs), GCC 13 `-O2`, page cache warm, 1 GiB synthetic datasets, median of 5.
-The PRD targets assume x86-64 Linux; no real-world capture has been benchmarked.
+- Offline classic PCAP with the Ethernet link type. No live capture, no pcapng (it suggests
+  `editcap -F pcap`), no stdin input.
+- IP fragments are counted, not reassembled. No application-layer dissectors; service names are
+  guesses from port numbers. TCP/UDP checksums are not verified.
+- VLAN IDs are not part of the flow key. Determinism across worker counts assumes non-decreasing
+  capture timestamps and no memory limit being hit (the report says when one was).
+- Memory per flow is above the 512 B target, and scaling is capped by the reader thread (see
+  Results).
+- Not yet measured: 2 GiB captures, x86-64 hardware, real-world traffic. The sample captures are
+  synthetic.
 
-| Measure | Result | PRD target |
-|---|---|---|
-| Decode only, D3 mix | 38.6 M pkt/s | ≥ 15 M |
-| Reassembly, 10 % reorder | 31.4 GiB/s | ≥ 1.5 GiB/s |
-| End-to-end D3, inline | 3.73 Mpkt/s, 1.77 GiB/s | ≥ 2.5 Mpkt/s, 1.5 GiB/s |
-| End-to-end D3, 4 workers | 7.69 Mpkt/s (2.06×) | ≥ 2.0× |
-| End-to-end D1 (284k flows), inline / 4 workers | 3.84 / 8.80 Mpkt/s | ≥ 1.5 Mpkt/s |
-| Peak RSS, 1 GiB D2 capture | 33–78 MiB | ≤ 128 MiB |
-| Memory per live flow | ≈ 790 B (upper bound) | ≤ 512 B, **not met** |
-| Fuzzing, 30 min per target | 1.33 B / 535 M / 8.0 M executions, 0 findings | 0 findings |
+## Platform notes
 
-Scaling stops at about 2× because the reader thread is the serial fraction (≈ 0.47, Amdahl ceiling
-≈ 2.1×); one elephant flow cannot be split across shards.
+- **Linux** is the primary target; CI uses Ubuntu 24.04 with GCC 13 and Clang 18.
+- **macOS** needs Homebrew LLVM (`brew install llvm`,
+  `export CXX=/opt/homebrew/opt/llvm/bin/clang++`). Apple Clang 15 lacks `std::format` and
+  libFuzzer. `scripts/demo.sh` picks LLVM automatically. Run the `asan` preset on Linux: under ASan on
+  macOS, tests that throw exceptions abort (Homebrew's libc++abi conflicts with ASan's interception).
+  `MADV_DONTNEED` does not reduce resident memory on macOS, so the release frontier only bounds RSS
+  on Linux.
+- **Linux from macOS:** `tools/docker/Dockerfile` builds the Ubuntu 24.04 image used for sanitizers,
+  fuzzing, the `tshark` differential and benchmarks:
+  `docker build -t netprobe-dev:24.04 tools/docker`, then
+  `docker run --rm -v "$PWD":/src -w /src netprobe-dev:24.04 bench/run_linux_container.sh`.
 
-## Documentation
+## Repository layout
 
-- [`docs/PRD.md`](docs/PRD.md): requirements, decision log, acceptance criteria.
-- [`docs/design.md`](docs/design.md): architecture as built, invariants, reassembly, concurrency.
-- [`docs/results.md`](docs/results.md): benchmark methodology and numbers.
-- [`DESIGN.md`](DESIGN.md): HTML report visual design.
+| Path | Contents |
+|---|---|
+| `src/` | `io/` mmap · `pcap/` reader · `decode/` · `flow/` · `tcp/` sequence math and reassembler · `analysis/` analyzer, stats, memory budget · `pipeline/` · `report/` JSON, HTML, text |
+| `tests/` | `unit/` GoogleTest · `integration/` Python via CTest · `fixtures/` Scapy captures and ground truth · `golden/` · `reference/` naive reassembler · `differential/` tshark · `fuzz/` |
+| `bench/`, `tools/` | Google Benchmark suites, end-to-end harness, `synth_pcap` dataset generator, Docker image |
+| `samples/`, `scripts/` | three synthetic demo captures, `demo.sh` |
+| `docs/` | [`PRD.md`](docs/PRD.md) requirements · [`design.md`](docs/design.md) architecture · [`results.md`](docs/results.md) benchmarks |
+| `DESIGN.md` | visual design system of the HTML report |
